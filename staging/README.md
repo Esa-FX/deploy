@@ -39,11 +39,20 @@ chmod +x deploy/staging/deploy-app-ec2.sh deploy/staging/deploy-mt-ec2.sh
 ./deploy/staging/deploy-app-ec2.sh
 ```
 
-## 4. MT EC2
+## 4. MT EC2 (Windows Server)
 
-```bash
-./deploy/staging/deploy-mt-ec2.sh
+The MT instance is **Windows** (required for `mt5manager`). Connect with SSM, then in **PowerShell**:
+
+```powershell
+# From your laptop — get instance id from EC2 console or terraform output
+aws ssm start-session --target <mt-instance-id> --region ap-southeast-3
+
+# On the Windows host
+cd C:\esafx\mt-bridge-service
+.\deploy\ec2-deploy.ps1
 ```
+
+Clone `mt-bridge-service` to `C:\esafx\mt-bridge-service` and place `.env.staging` there first. Do **not** use `deploy-mt-ec2.sh` (Linux/bash) on the MT host.
 
 ## 5. CRM frontend
 
