@@ -90,7 +90,7 @@ services:
     image: ${IDENTITY_IMAGE:-esafx-identity:latest}
     build:
       context: ../../identity-service
-    command: sh -c "alembic upgrade head"
+    command: sh -c "python -m alembic upgrade head"
     env_file:
       - ../../identity-service/.env.staging
     volumes: *rds-ca-volume
@@ -101,7 +101,7 @@ services:
     image: ${CRM_IMAGE:-esafx-crm:latest}
     build:
       context: ../../crm-service
-    command: sh -c "alembic upgrade head"
+    command: sh -c "python -m alembic upgrade head"
     env_file:
       - ../../crm-service/.env.staging
     volumes: *rds-ca-volume
@@ -112,7 +112,7 @@ services:
     image: ${CLIENT_IMAGE:-esafx-client:latest}
     build:
       context: ../../client-service
-    command: sh -c "alembic upgrade head"
+    command: sh -c "python -m alembic upgrade head"
     env_file:
       - ../../client-service/.env.staging
     volumes: *rds-ca-volume
