@@ -28,6 +28,16 @@ Copy each `*.env.staging.example` → `.env.staging` and fill from Terraform out
 
 **Passwords:** use `esafx/staging/db/core` in Secrets Manager after `terraform apply` with `manage_master_user_password=false` (password matches RDS). Until then, use the RDS-managed secret (`rds!db-...` from the RDS console). No quotes around passwords; never edit passwords in PowerShell double-quoted strings (`$` expands).
 
+**Docker Compose `$` warnings:** Compose interpolates `$VAR` in `env_file` values. If you see `The "o3" variable is not set`, a password or URL contains `$` (e.g. `...$o3...`). Escape each `$` as `$$` in `.env.staging`, or remove `$` from generated passwords when possible.
+
+**Alembic (shared `esafx_core` DB):** each service uses its own version table (`alembic_version_identity`, `alembic_version_crm`, `alembic_version_client`). If identity migrations already ran against the old shared `public.alembic_version`, stamp once after pulling the fix:
+
+```bash
+docker compose -f deploy/staging/docker-compose.app.yml --profile migrate run --rm identity-migrate alembic stamp 002
+```
+
+Then run `./deploy/staging/deploy-app-ec2.sh` (or at least `crm-migrate`).
+
 **Critical:** `crm-service` and `client-service` must set:
 
 ```bash
