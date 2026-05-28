@@ -7,6 +7,14 @@ COMPOSE_FILE="${COMPOSE_FILE:-$REPO_ROOT/deploy/staging/docker-compose.app.yml}"
 
 cd "$REPO_ROOT"
 
+CA_BUNDLE="${RDS_CA_BUNDLE:-/opt/esafx/global-bundle.pem}"
+if [[ ! -f "$CA_BUNDLE" ]]; then
+  echo "==> Download RDS CA bundle to $CA_BUNDLE"
+  sudo mkdir -p "$(dirname "$CA_BUNDLE")"
+  sudo curl -fsSL "https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem" -o "$CA_BUNDLE"
+  sudo chmod 644 "$CA_BUNDLE"
+fi
+
 require_env() {
   local f="$1"
   if [[ ! -f "$f" ]]; then

@@ -1,7 +1,10 @@
 # Unified app-tier staging compose (identity, crm, client, pii-vault).
-# Run from repo root: docker compose -f deploy/staging/docker-compose.app.yml --env-file deploy/staging/.env.app.staging
+# Run from monorepo root: ./deploy/staging/deploy-app-ec2.sh
 #
-# Per-service secrets still live in each */.env.staging; this file wires ports and build contexts.
+# Host: download RDS CA once to /opt/esafx/global-bundle.pem (deploy script does this).
+
+x-rds-ca-volume: &rds-ca-volume
+  - /opt/esafx/global-bundle.pem:/opt/esafx/global-bundle.pem:ro
 
 services:
   identity:
@@ -15,6 +18,7 @@ services:
       - "8000:8000"
     env_file:
       - ../../identity-service/.env.staging
+    volumes: *rds-ca-volume
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -33,6 +37,7 @@ services:
       - "8004:8004"
     env_file:
       - ../../pii-vault-service/.env.staging
+    volumes: *rds-ca-volume
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
       interval: 30s
@@ -51,6 +56,7 @@ services:
       - "${CRM_PORT:-8001}:8000"
     env_file:
       - ../../crm-service/.env.staging
+    volumes: *rds-ca-volume
     depends_on:
       pii-vault:
         condition: service_healthy
@@ -72,6 +78,7 @@ services:
       - "${CLIENT_PORT:-8002}:8000"
     env_file:
       - ../../client-service/.env.staging
+    volumes: *rds-ca-volume
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
       interval: 30s
@@ -86,6 +93,7 @@ services:
     command: sh -c "alembic upgrade head"
     env_file:
       - ../../identity-service/.env.staging
+    volumes: *rds-ca-volume
     profiles:
       - migrate
 
@@ -96,6 +104,7 @@ services:
     command: sh -c "alembic upgrade head"
     env_file:
       - ../../crm-service/.env.staging
+    volumes: *rds-ca-volume
     profiles:
       - migrate
 
@@ -106,5 +115,6 @@ services:
     command: sh -c "alembic upgrade head"
     env_file:
       - ../../client-service/.env.staging
+    volumes: *rds-ca-volume
     profiles:
       - migrate

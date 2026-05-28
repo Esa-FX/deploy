@@ -13,7 +13,7 @@ Record `mt_ec2_private_ip`, RDS endpoints, Cognito IDs, and Secrets Manager path
 
 ## 2. Configure `.env.staging` per service
 
-Copy each `*.env.staging.example` → `.env.staging` and fill from Terraform outputs + Secrets Manager:
+Copy each `*.env.staging.example` → `.env.staging` and fill from Terraform outputs + Secrets Manager.
 
 | Service | File |
 |---------|------|
@@ -23,6 +23,10 @@ Copy each `*.env.staging.example` → `.env.staging` and fill from Terraform out
 | client | `client-service/.env.staging` |
 | mt-bridge | `mt-bridge-service/.env.staging` |
 | CRM build | `crm/.env.staging` |
+
+**RDS (core DB):** set `DB_SSL=true` and `DB_SSL_CA_FILE=/opt/esafx/global-bundle.pem` on every service using Postgres. `deploy-app-ec2.sh` downloads the CA bundle on the host; compose mounts it into containers.
+
+**Passwords:** use `esafx/staging/db/core` in Secrets Manager after `terraform apply` with `manage_master_user_password=false` (password matches RDS). Until then, use the RDS-managed secret (`rds!db-...` from the RDS console). No quotes around passwords; never edit passwords in PowerShell double-quoted strings (`$` expands).
 
 **Critical:** `crm-service` and `client-service` must set:
 
