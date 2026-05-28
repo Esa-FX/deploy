@@ -27,14 +27,14 @@ for svc in identity-service crm-service pii-vault-service client-service; do
   require_env "$REPO_ROOT/$svc/.env.staging"
 done
 
-echo "==> identity migrations"
-docker compose -f "$COMPOSE_FILE" --profile migrate run --rm identity-migrate
+echo "==> identity migrations (rebuild image so env.py / migrations are current)"
+docker compose -f "$COMPOSE_FILE" --profile migrate run --rm --build identity-migrate
 
 echo "==> crm migrations (includes pii_vault schema)"
-docker compose -f "$COMPOSE_FILE" --profile migrate run --rm crm-migrate
+docker compose -f "$COMPOSE_FILE" --profile migrate run --rm --build crm-migrate
 
 echo "==> client migrations"
-docker compose -f "$COMPOSE_FILE" --profile migrate run --rm client-migrate
+docker compose -f "$COMPOSE_FILE" --profile migrate run --rm --build client-migrate
 
 echo "==> build & start"
 docker compose -f "$COMPOSE_FILE" build identity pii-vault crm-api client

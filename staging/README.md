@@ -38,6 +38,21 @@ docker compose -f deploy/staging/docker-compose.app.yml --profile migrate run --
 
 Then run `./deploy/staging/deploy-app-ec2.sh` (or at least `crm-migrate`).
 
+**Always pass `--build`** on migrate runs after `git pull`; otherwise Compose reuses an old image and CRM still reads `public.alembic_version` (identity revision `002`):
+
+```bash
+cd crm-service && git pull origin main && cd ..
+docker compose -f deploy/staging/docker-compose.app.yml --profile migrate run --rm --build crm-migrate
+```
+
+Verify the running image has the fix:
+
+```bash
+docker compose -f deploy/staging/docker-compose.app.yml --profile migrate run --rm --build crm-migrate \
+  grep ALEMBIC_VERSION_TABLE /app/app/db/migrations/env.py
+# expect: ALEMBIC_VERSION_TABLE = "alembic_version_crm"
+```
+
 **Critical:** `crm-service` and `client-service` must set:
 
 ```bash
