@@ -61,6 +61,14 @@ MT_BRIDGE_SERVICE_URL=http://<mt_ec2_private_ip>:8003
 
 Use the same `MT_BRIDGE_SERVICE_TOKEN` in crm, client, and mt-bridge.
 
+**crm-api Compose networking:** from inside the `crm-api` container, use Docker service hostnames (not host `127.0.0.1` ports):
+
+```bash
+IDENTITY_SERVICE_URL=http://identity:8000
+PII_VAULT_SERVICE_URL=http://pii-vault:8004
+CLIENT_SERVICE_URL=http://client:8000
+```
+
 ## 3. App EC2
 
 ```bash
