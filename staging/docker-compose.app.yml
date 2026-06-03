@@ -45,6 +45,25 @@ services:
       retries: 3
       start_period: 30s
 
+  audit-log:
+    image: ${AUDIT_LOG_IMAGE:-esafx-audit-log:latest}
+    build:
+      context: ../../audit-log-service
+      dockerfile: Dockerfile
+    container_name: esafx-audit-log
+    restart: unless-stopped
+    ports:
+      - "8005:8005"
+    env_file:
+      - ../../audit-log-service/.env.staging
+    volumes: *rds-ca-volume
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
   crm-api:
     image: ${CRM_IMAGE:-esafx-crm:latest}
     build:
@@ -58,7 +77,11 @@ services:
       - ../../crm-service/.env.staging
     volumes: *rds-ca-volume
     depends_on:
+      identity:
+        condition: service_healthy
       pii-vault:
+        condition: service_healthy
+      audit-log:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -115,6 +138,17 @@ services:
     command: sh -c "python -m alembic upgrade head"
     env_file:
       - ../../client-service/.env.staging
+    volumes: *rds-ca-volume
+    profiles:
+      - migrate
+
+  audit-migrate:
+    image: ${AUDIT_LOG_IMAGE:-esafx-audit-log:latest}
+    build:
+      context: ../../audit-log-service
+    command: sh -c "python -m alembic upgrade head"
+    env_file:
+      - ../../audit-log-service/.env.staging
     volumes: *rds-ca-volume
     profiles:
       - migrate

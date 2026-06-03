@@ -19,6 +19,7 @@ Copy each `*.env.staging.example` → `.env.staging` and fill from Terraform out
 |---------|------|
 | identity | `identity-service/.env.staging` |
 | pii-vault | `pii-vault-service/.env.staging` |
+| audit-log | `audit-log-service/.env.staging` |
 | crm-api | `crm-service/.env.staging` |
 | client | `client-service/.env.staging` |
 | mt-bridge | `mt-bridge-service/.env.staging` |
@@ -66,8 +67,26 @@ Use the same `MT_BRIDGE_SERVICE_TOKEN` in crm, client, and mt-bridge.
 ```bash
 IDENTITY_SERVICE_URL=http://identity:8000
 PII_VAULT_SERVICE_URL=http://pii-vault:8004
+AUDIT_LOG_SERVICE_URL=http://audit-log:8005
 CLIENT_SERVICE_URL=http://client:8000
 ```
+
+**Audit pipeline (terraform outputs):** set on `crm-service` and other publishers:
+
+```bash
+AUDIT_LOG_API_KEY=<shared secret>
+EVENTBRIDGE_AUDIT_ENABLED=true
+EVENTBRIDGE_AUDIT_BUS_NAME=<audit_event_bus_name output>
+```
+
+On `audit-log-service`:
+
+```bash
+SQS_QUEUE_URL=<audit_sqs_queue_url output>
+AUDIT_LOG_API_KEY=<same shared secret>
+```
+
+Internal port **8005** (`http://audit-log:8005`). `deploy-app-ec2.sh` runs `audit-migrate`, starts `audit-log` before `crm-api`, and curls `:8005/health`.
 
 ## 3. App EC2
 
