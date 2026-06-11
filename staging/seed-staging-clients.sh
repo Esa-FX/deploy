@@ -13,11 +13,18 @@ if ! grep -q '^TRADING_DB_HOST=' "$REPO_ROOT/crm-service/.env.staging" 2>/dev/nu
   exit 1
 fi
 
-echo "==> Rebuild crm-api (includes scripts/seed_clients.py)"
-docker compose -f "$COMPOSE_FILE" build crm-api
+SEED_SCRIPT="$REPO_ROOT/crm-service/scripts/seed_clients.py"
+if [[ ! -f "$SEED_SCRIPT" ]]; then
+  echo "Missing $SEED_SCRIPT — in crm-service run: git fetch origin && git checkout staging && git pull origin staging" >&2
+  exit 1
+fi
+
+echo "==> Rebuild crm-api (includes scripts/seed_clients.py; --no-cache avoids stale image layers)"
+docker compose -f "$COMPOSE_FILE" build --no-cache crm-api
 
 echo "==> Seed clients (core + esafx_trading)"
-docker compose -f "$COMPOSE_FILE" run --rm --no-deps crm-api \
-  python scripts/seed_clients.py --skip-pii "$@"
+docker compose -f "$COMPOSE_FILE" run --rm --no-deps \
+  -v "$REPO_ROOT/crm-service/scripts:/app/scripts:ro" \
+  crm-api python scripts/seed_clients.py --skip-pii "$@"
 
 echo "Done. Check KPI report for the current month as a team leader."
