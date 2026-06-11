@@ -104,13 +104,56 @@ The MT instance is **Windows** (required for `mt5manager`). Connect with SSM, th
 ```powershell
 # From your laptop — get instance id from EC2 console or terraform output
 aws ssm start-session --target <mt-instance-id> --region ap-southeast-3
+```
 
-# On the Windows host
-cd C:\esafx\mt-bridge-service
+User-data bootstrap installs Python 3.12, AWS CLI, Git, and opens port 8003. On a **fresh** MT host:
+
+```powershell
+# Option A — bootstrap script (clone + secrets + deploy)
+# Copy bootstrap-mt-ec2.ps1 to the host first, or clone the full monorepo to C:\esafx
+powershell -ExecutionPolicy Bypass -File C:\esafx\deploy\staging\bootstrap-mt-ec2.ps1
+
+# Option B — manual (same steps)
+cd C:\esafx
+git clone https://github.com/Esa-FX/mt-bridge-service.git mt-bridge-service
+cd mt-bridge-service
+git pull origin main
+.\deploy\sync-env-from-secrets.ps1 -InstallAwsCli
 .\deploy\ec2-deploy.ps1
 ```
 
-Clone `mt-bridge-service` to `C:\esafx\mt-bridge-service` and place `.env.staging` there first. Do **not** use `deploy-mt-ec2.sh` (Linux/bash) on the MT host.
+`ec2-deploy.ps1` verifies RDS login, runs **Alembic on esafx_trading**, and starts uvicorn on **8003**.
+
+Confirm from MT host:
+
+```powershell
+Invoke-WebRequest -Uri http://127.0.0.1:8003/health -UseBasicParsing
+```
+
+Do **not** use `deploy-mt-ec2.sh` (Linux/bash) on the MT host.
+
+## 4b. Seed demo clients + KPI trading data (app EC2)
+
+Architecture: **CRM/core** on `esafx_core`, **trading** on `esafx_trading` (mt-bridge DB).
+
+1. After MT EC2 deploy (§4), on **app EC2**:
+
+```bash
+cd /opt/esafx
+git pull origin staging   # crm-service + deploy scripts
+
+# Add TRADING_DB_* to crm-service/.env.staging (from Secrets Manager)
+chmod +x deploy/staging/sync-crm-trading-db-env.sh deploy/staging/seed-staging-clients.sh
+./deploy/staging/sync-crm-trading-db-env.sh
+
+# Rebuild crm-api and seed (5–10 clients per leader + FTD/deposits/withdrawals)
+./deploy/staging/seed-staging-clients.sh
+# or: bash crm-service/scripts/ssm-seed-clients-staging.sh
+```
+
+2. Open CRM → Reports → KPI for the current month as a team leader.
+
+**Note:** Escape `$` as `$$` in `.env.staging` passwords if Compose warns `The "o3" variable is not set`.
 
 ## 5. CRM frontend
 
