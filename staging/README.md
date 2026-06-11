@@ -21,6 +21,7 @@ Copy each `*.env.staging.example` → `.env.staging` and fill from Terraform out
 | pii-vault | `pii-vault-service/.env.staging` |
 | audit-log | `audit-log-service/.env.staging` |
 | crm-api | `crm-service/.env.staging` |
+| voip-gateway | `voip-gateway-service/.env.staging` |
 | client | `client-service/.env.staging` |
 | mt-bridge | `mt-bridge-service/.env.staging` |
 | CRM build | `crm/.env.staging` |
@@ -68,6 +69,7 @@ Use the same `MT_BRIDGE_SERVICE_TOKEN` in crm, client, and mt-bridge.
 IDENTITY_SERVICE_URL=http://identity:8000
 PII_VAULT_SERVICE_URL=http://pii-vault:8004
 AUDIT_LOG_SERVICE_URL=http://audit-log:8005
+VOIP_GATEWAY_URL=http://voip-gateway:8006
 CLIENT_SERVICE_URL=http://client:8000
 ```
 
