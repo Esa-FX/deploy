@@ -22,9 +22,9 @@ fi
 echo "==> Rebuild crm-api (includes scripts/seed_clients.py; --no-cache avoids stale image layers)"
 docker compose -f "$COMPOSE_FILE" build --no-cache crm-api
 
-echo "==> Seed clients (core + esafx_trading)"
+echo "==> Seed clients (core + esafx_trading; --reset removes prior seed-client rows)"
 docker compose -f "$COMPOSE_FILE" run --rm --no-deps \
   -v "$REPO_ROOT/crm-service/scripts:/app/scripts:ro" \
-  crm-api python scripts/seed_clients.py --skip-pii "$@"
+  crm-api python scripts/seed_clients.py --reset "$@"
 
 echo "Done. Check KPI report for the current month as a team leader."
