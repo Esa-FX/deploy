@@ -163,13 +163,18 @@ chmod +x deploy/staging/sync-crm-trading-db-env.sh deploy/staging/run-trading-mi
 
 crm-api uses read-only `crm_trading_readonly` from `esafx/staging/db/trading-readonly`.
 
+`docker-compose.app.yml` mounts `/opt/esafx/secrets/trading_db_password` into crm-api at `/run/secrets/trading_db_password`. Use `TRADING_DB_PASSWORD_FILE` in `crm-service/.env.staging` — **not** inline `TRADING_DB_PASSWORD` (Compose mangles `$` in passwords).
+
+`deploy-app-ec2.sh` runs `sync-crm-trading-db-env.sh` before starting crm-api. After `git pull` in `deploy/`, recreate crm-api:
+
 ```bash
-./deploy/staging/run-trading-migrate.sh
 ./deploy/staging/sync-crm-trading-db-env.sh
 docker compose -f deploy/staging/docker-compose.app.yml up -d --build --force-recreate crm-api
 ```
 
-**Note:** Escape `$` as `$$` in inline `.env.staging` passwords only if you still use `TRADING_DB_PASSWORD` directly (local dev). Prefer `TRADING_DB_PASSWORD_FILE` on staging.
+**First-time / after readonly secret rotation:** sync the Postgres role on a host with `mt-bridge-service` (MT EC2) or run the inline `ALTER ROLE` SQL from app EC2 (see prior runbooks), then sync + recreate as above.
+
+**Note:** Escape `$` as `$$` in inline `.env.staging` passwords for core DB and service tokens. Trading readonly password must stay in the mounted secret file only.
 
 ## 5. CRM frontend
 

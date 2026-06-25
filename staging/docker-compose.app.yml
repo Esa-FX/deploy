@@ -75,7 +75,9 @@ services:
       - "${CRM_PORT:-8001}:8000"
     env_file:
       - ../../crm-service/.env.staging
-    volumes: *rds-ca-volume
+    volumes:
+      - /opt/esafx/global-bundle.pem:/opt/esafx/global-bundle.pem:ro
+      - /opt/esafx/secrets/trading_db_password:/run/secrets/trading_db_password:ro
     depends_on:
       identity:
         condition: service_healthy

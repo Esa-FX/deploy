@@ -39,6 +39,9 @@ docker compose -f "$COMPOSE_FILE" --profile migrate run --rm --build client-migr
 echo "==> audit-log migrations"
 docker compose -f "$COMPOSE_FILE" --profile migrate run --rm --build audit-migrate
 
+echo "==> sync crm-api trading DB env (readonly secret → .env.staging + password file)"
+"$REPO_ROOT/deploy/staging/sync-crm-trading-db-env.sh"
+
 echo "==> build & start"
 docker compose -f "$COMPOSE_FILE" build identity pii-vault audit-log voip-gateway crm-api client
 docker compose -f "$COMPOSE_FILE" up -d identity pii-vault audit-log voip-gateway crm-api client
