@@ -140,10 +140,16 @@ Architecture: **CRM/core** on `esafx_core`, **trading** on `esafx_trading` (mt-b
 
 ```bash
 cd /opt/esafx
-git pull origin staging   # crm-service + deploy scripts
+git -C deploy pull origin main
+git -C crm-service pull origin staging
+git -C mt-bridge-service pull origin staging
 
-# Add TRADING_DB_* to crm-service/.env.staging (from Secrets Manager)
-chmod +x deploy/staging/sync-crm-trading-db-env.sh deploy/staging/seed-staging-clients.sh
+chmod +x deploy/staging/sync-crm-trading-db-env.sh deploy/staging/run-trading-migrate.sh deploy/staging/seed-staging-clients.sh
+
+# 1) Terraform: esafx/staging/db/trading-readonly secret (crm_trading_readonly)
+# 2) Create role on trading RDS (app EC2 or MT EC2):
+./deploy/staging/run-trading-migrate.sh
+# 3) Point crm-api at readonly creds:
 ./deploy/staging/sync-crm-trading-db-env.sh
 
 # Rebuild crm-api and seed (5–10 clients per leader + FTD/deposits/withdrawals)
@@ -153,7 +159,17 @@ chmod +x deploy/staging/sync-crm-trading-db-env.sh deploy/staging/seed-staging-c
 
 2. Open CRM → Reports → KPI for the current month as a team leader.
 
-**Note:** Escape `$` as `$$` in `.env.staging` passwords if Compose warns `The "o3" variable is not set`.
+**Trading DB auth (`InvalidPasswordError` / empty account-rows):**
+
+crm-api uses read-only `crm_trading_readonly` from `esafx/staging/db/trading-readonly`.
+
+```bash
+./deploy/staging/run-trading-migrate.sh
+./deploy/staging/sync-crm-trading-db-env.sh
+docker compose -f deploy/staging/docker-compose.app.yml up -d --build --force-recreate crm-api
+```
+
+**Note:** Escape `$` as `$$` in inline `.env.staging` passwords only if you still use `TRADING_DB_PASSWORD` directly (local dev). Prefer `TRADING_DB_PASSWORD_FILE` on staging.
 
 ## 5. CRM frontend
 
