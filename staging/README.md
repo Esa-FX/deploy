@@ -89,14 +89,15 @@ EVENTBRIDGE_AUDIT_BUS_NAME=<audit_event_bus_name output>
 Set on `voip-gateway-service/.env.staging`:
 
 ```bash
-AMI_RECORDING_FETCH=sftp
+AMI_RECORDING_FETCH=sftp-glob
 SFTP_HOST=<recording server>
 SFTP_PORT=22
 SFTP_USERNAME=
 SFTP_PASSWORD=
-AMI_RECORDING_PATH=/var/spool/asterisk/monitor/
-AMI_RECORDING_FILENAME_PATTERN={voip_call_id}.wav
-S3_RECORDINGS_BUCKET=esafx-staging-call-recordings
+AMI_RECORDING_PATH=/var/spool/asterisk/monitor
+AMI_RECORDING_DATE_FOLDERS=true
+AMI_RECORDING_TIMEZONE=Asia/Jakarta
+S3_RECORDINGS_BUCKET=esafx-staging-call-recordings-612524168745
 S3_RECORDINGS_PREFIX=recordings
 AWS_REGION=ap-southeast-3
 ```
