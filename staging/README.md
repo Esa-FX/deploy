@@ -81,6 +81,34 @@ EVENTBRIDGE_AUDIT_ENABLED=true
 EVENTBRIDGE_AUDIT_BUS_NAME=<audit_event_bus_name output>
 ```
 
+**Call recordings (S3):** provision a dedicated bucket in `infra/staging/terraform` (e.g. `esafx-staging-call-recordings`). Attach IAM on the app EC2 instance role:
+
+- `voip-gateway`: `s3:PutObject` on `arn:aws:s3:::esafx-staging-call-recordings/recordings/*`
+- `crm-api`: `s3:GetObject` on the same prefix
+
+Set on `voip-gateway-service/.env.staging`:
+
+```bash
+AMI_RECORDING_FETCH=sftp
+SFTP_HOST=<recording server>
+SFTP_PORT=22
+SFTP_USERNAME=
+SFTP_PASSWORD=
+AMI_RECORDING_PATH=/var/spool/asterisk/monitor/
+AMI_RECORDING_FILENAME_PATTERN={voip_call_id}.wav
+S3_RECORDINGS_BUCKET=esafx-staging-call-recordings
+S3_RECORDINGS_PREFIX=recordings
+AWS_REGION=ap-southeast-3
+```
+
+Set on `crm-service/.env.staging`:
+
+```bash
+S3_RECORDINGS_BUCKET=esafx-staging-call-recordings
+RECORDING_PRESIGN_TTL_SEC=900
+AWS_REGION=ap-southeast-3
+```
+
 On `audit-log-service`:
 
 ```bash
