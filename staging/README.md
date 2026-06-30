@@ -63,6 +63,16 @@ MT_BRIDGE_SERVICE_URL=http://<mt_ec2_private_ip>:8003
 
 Use the same `MT_BRIDGE_SERVICE_TOKEN` in crm, client, and mt-bridge.
 
+**Inter-service tokens (`esafx/staging/service-tokens`):** `crm-api` sends `CLIENT_SERVICE_TOKEN` as `X-Internal-Token` to client-service. client-service expects the same value in `INTERNAL_SERVICE_TOKEN`. If they drift, trading-meta returns **401** and CRM features that call client-service break.
+
+```bash
+chmod +x deploy/staging/sync-service-tokens-env.sh
+./deploy/staging/sync-service-tokens-env.sh
+docker compose -f deploy/staging/docker-compose.app.yml up -d --force-recreate crm-api client pii-vault
+```
+
+`deploy-app-ec2.sh` runs this sync automatically before starting containers.
+
 **crm-api Compose networking:** from inside the `crm-api` container, use Docker service hostnames (not host `127.0.0.1` ports):
 
 ```bash
