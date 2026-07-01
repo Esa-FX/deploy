@@ -1,0 +1,37 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "CrmApiPutFtdUploads",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:AbortMultipartUpload"
+      ],
+      "Resource": "arn:aws:s3:::esafx-staging-ftd-uploads-612524168745/ftd/*"
+    },
+    {
+      "Sid": "CrmApiGetFtdUploads",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject"
+      ],
+      "Resource": "arn:aws:s3:::esafx-staging-ftd-uploads-612524168745/ftd/*"
+    },
+    {
+      "Sid": "ListFtdUploadsPrefix",
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket"
+      ],
+      "Resource": "arn:aws:s3:::esafx-staging-ftd-uploads-612524168745",
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": [
+            "ftd/*"
+          ]
+        }
+      }
+    }
+  ]
+}
