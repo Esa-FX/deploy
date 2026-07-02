@@ -1,0 +1,33 @@
+# Copy to terraform.tfvars and adjust before apply.
+# Requires AWS credentials and a public Route 53 hosted zone for esandardev.com.
+
+aws_region = "ap-southeast-3"
+environment = "production"
+project     = "esafx"
+
+domain_name  = "esandardev.com"
+api_hostname = "api.esandardev.com"
+crm_hostname = "crm.esandardev.com"
+
+# All tiers start small; scale instance types in tfvars when usage grows.
+linux_instance_type   = "t3.small"
+windows_instance_type = "t3.small"
+db_instance_class     = "db.t3.small"
+redis_node_type       = "cache.t3.small"
+
+vpc_cidr = "10.1.0.0/16"
+
+# Set false only if you bring existing ACM certificates.
+create_acm_certificates  = true
+create_route53_records   = true
+# alb_certificate_arn      = "arn:aws:acm:ap-southeast-3:..."
+# cloudfront_certificate_arn = "arn:aws:acm:us-east-1:..."
+
+cognito_callback_urls = ["https://crm.esandardev.com"]
+cognito_logout_urls   = ["https://crm.esandardev.com"]
+
+# Optional emergency SSH key (SSM Session Manager is preferred).
+# ssh_key_name = "esafx-production"
+
+# Restrict ALB ingress in production when office/VPN CIDRs are known.
+# allowed_cidr_blocks = ["203.0.113.0/24"]
