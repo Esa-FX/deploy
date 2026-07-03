@@ -25,7 +25,7 @@ set_env_var() {
   local file="$1"
   local key="$2"
   local value="$3"
-  [[ -f "$file" ]] || { echo "Missing $file" >&2; exit 1; }
+  [[ -f "$file" ]] || { echo "Skip $key — missing $file"; return 0; }
   local escaped tmp
   escaped="$(compose_escape "$value")"
   tmp="$(mktemp)"
