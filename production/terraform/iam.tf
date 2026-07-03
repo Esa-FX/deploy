@@ -177,6 +177,29 @@ resource "aws_iam_role_policy" "ftd_uploads_crm" {
   })
 }
 
+resource "aws_iam_role_policy" "client_docs_crm" {
+  name = "${local.name_prefix}-client-docs-s3"
+  role = aws_iam_role.ec2_crm.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject", "s3:AbortMultipartUpload"]
+        Resource = [
+          "${aws_s3_bucket.kyc_docs.arn}/*",
+          "${aws_s3_bucket.signed_agreements.arn}/*",
+        ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["s3:ListBucket"]
+        Resource = [aws_s3_bucket.kyc_docs.arn, aws_s3_bucket.signed_agreements.arn]
+      },
+    ]
+  })
+}
+
 resource "aws_iam_role_policy" "eventbridge_crm" {
   name = "${local.name_prefix}-eventbridge-publish"
   role = aws_iam_role.ec2_crm.id

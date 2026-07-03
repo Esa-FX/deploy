@@ -103,3 +103,47 @@ resource "aws_s3_bucket_policy" "crm_frontend" {
   bucket = aws_s3_bucket.crm_frontend.id
   policy = data.aws_iam_policy_document.crm_frontend_oac.json
 }
+
+resource "aws_s3_bucket" "kyc_docs" {
+  bucket = local.kyc_docs_bucket
+  tags   = merge(local.common_tags, { Service = "kyc-docs" })
+}
+
+resource "aws_s3_bucket_public_access_block" "kyc_docs" {
+  bucket                  = aws_s3_bucket.kyc_docs.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "kyc_docs" {
+  bucket = aws_s3_bucket.kyc_docs.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket" "signed_agreements" {
+  bucket = local.agreements_bucket
+  tags   = merge(local.common_tags, { Service = "signed-agreements" })
+}
+
+resource "aws_s3_bucket_public_access_block" "signed_agreements" {
+  bucket                  = aws_s3_bucket.signed_agreements.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "signed_agreements" {
+  bucket = aws_s3_bucket.signed_agreements.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}

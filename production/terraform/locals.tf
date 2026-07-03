@@ -17,6 +17,8 @@ locals {
   call_recordings_bucket = "${local.name_prefix}-call-recordings-${local.account_id}"
   ftd_uploads_bucket     = "${local.name_prefix}-ftd-uploads-${local.account_id}"
   crm_frontend_bucket    = "${local.name_prefix}-crm-frontend-${local.account_id}"
+  kyc_docs_bucket        = "esafx-kyc-docs-production-${local.account_id}"
+  agreements_bucket      = "esafx-signed-agreements-production-${local.account_id}"
 
   common_tags = {
     Project     = var.project
