@@ -1,0 +1,24 @@
+# Production VoIP tier — single voip-gateway on voip EC2 (Elastic IP for vendor whitelist).
+
+x-rds-ca-volume: &rds-ca-volume
+  - /opt/esafx/global-bundle.pem:/opt/esafx/global-bundle.pem:ro
+
+services:
+  voip-gateway:
+    image: ${VOIP_GATEWAY_IMAGE:-esafx-voip-gateway:latest}
+    build:
+      context: ../../voip-gateway-service
+      dockerfile: Dockerfile
+    container_name: esafx-voip-gateway
+    restart: unless-stopped
+    ports:
+      - "8006:8006"
+    env_file:
+      - ../../voip-gateway-service/.env.production
+    volumes: *rds-ca-volume
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8006/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s

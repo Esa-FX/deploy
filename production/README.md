@@ -76,6 +76,40 @@ Production VPC CIDR is `10.1.0.0/16` (staging uses `10.0.0.0/16`).
 
 **VoIP static IP:** the voip EC2 runs in a public subnet with a dedicated Elastic IP (`voip_elastic_ip` output). Provide that address to the PBX vendor for whitelisting. It persists across instance stop/start; only `terraform destroy` or manual disassociation changes it.
 
+## Phase 2 — Deploy application tiers
+
+On each EC2 (via SSM), clone service repos under `/opt/esafx` and `git pull origin main`. Copy each `*.env.staging.example` → `.env.production` using `terraform output` + Secrets Manager, then set **cross-host URLs**:
+
+| Variable | Example (replace with terraform output) |
+|----------|----------------------------------------|
+| `IDENTITY_SERVICE_URL` | `http://10.1.133.252:8000` on CRM EC2 |
+| `PII_VAULT_SERVICE_URL` | `http://10.1.133.252:8004` on CRM EC2 |
+| `AUDIT_LOG_SERVICE_URL` | `http://10.1.133.252:8005` on CRM EC2 |
+| `VOIP_GATEWAY_URL` | `http://10.1.12.152:8006` on CRM EC2 |
+| `MT_BRIDGE_SERVICE_URL` | `http://10.1.143.205:8003` on CRM EC2 |
+| `CLIENT_SERVICE_URL` | `http://client:8000` inside CRM compose only |
+
+### Deploy order
+
+```bash
+# 1. Core EC2
+./deploy/production/deploy-core-ec2.sh
+
+# 2. VoIP EC2
+./deploy/production/deploy-voip-ec2.sh
+
+# 3. MT EC2 (Windows — mt-bridge-service deploy/ec2-deploy.ps1)
+
+# 4. CRM EC2 (after core + MT are up)
+./deploy/production/deploy-crm-ec2.sh
+```
+
+Compose files: `docker-compose.core.yml`, `docker-compose.voip.yml`, `docker-compose.crm.yml`.
+
+## Phase 3 — Legacy CSV import
+
+See `crm-service/docs/legacy-csv-import.md`. Import leads before clients; use `--sync-mt5` for MT5 account linking.
+
 ### Post-apply (Phase 2 — not in Terraform)
 
 1. SSM into each EC2 tier; clone service repos and `git pull origin main`

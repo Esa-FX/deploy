@@ -1,0 +1,96 @@
+# Production core tier: identity, pii-vault, audit-log
+# Host: core EC2 — run deploy/production/deploy-core-ec2.sh
+
+x-rds-ca-volume: &rds-ca-volume
+  - /opt/esafx/global-bundle.pem:/opt/esafx/global-bundle.pem:ro
+
+services:
+  identity:
+    image: ${IDENTITY_IMAGE:-esafx-identity:latest}
+    build:
+      context: ../../identity-service
+      dockerfile: Dockerfile
+    container_name: esafx-identity
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../../identity-service/.env.production
+    volumes: *rds-ca-volume
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+  pii-vault:
+    image: ${PII_VAULT_IMAGE:-esafx-pii-vault:latest}
+    build:
+      context: ../../pii-vault-service
+      dockerfile: Dockerfile
+    container_name: esafx-pii-vault
+    restart: unless-stopped
+    ports:
+      - "8004:8004"
+    env_file:
+      - ../../pii-vault-service/.env.production
+    volumes: *rds-ca-volume
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  audit-log:
+    image: ${AUDIT_LOG_IMAGE:-esafx-audit-log:latest}
+    build:
+      context: ../../audit-log-service
+      dockerfile: Dockerfile
+    container_name: esafx-audit-log
+    restart: unless-stopped
+    ports:
+      - "8005:8005"
+    env_file:
+      - ../../audit-log-service/.env.production
+    volumes: *rds-ca-volume
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  identity-migrate:
+    image: ${IDENTITY_IMAGE:-esafx-identity:latest}
+    build:
+      context: ../../identity-service
+    command: sh -c "python -m alembic upgrade head"
+    env_file:
+      - ../../identity-service/.env.production
+    volumes: *rds-ca-volume
+    profiles:
+      - migrate
+
+  crm-migrate:
+    image: ${CRM_IMAGE:-esafx-crm:latest}
+    build:
+      context: ../../crm-service
+    command: sh -c "python -m alembic upgrade head"
+    env_file:
+      - ../../crm-service/.env.production
+    volumes: *rds-ca-volume
+    profiles:
+      - migrate
+
+  audit-migrate:
+    image: ${AUDIT_LOG_IMAGE:-esafx-audit-log:latest}
+    build:
+      context: ../../audit-log-service
+    command: sh -c "python -m alembic upgrade head"
+    env_file:
+      - ../../audit-log-service/.env.production
+    volumes: *rds-ca-volume
+    profiles:
+      - migrate
