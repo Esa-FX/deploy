@@ -10,6 +10,35 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Ensure-Git {
+    if (Get-Command git -ErrorAction SilentlyContinue) { return }
+    Write-Host "==> Install Git for Windows"
+    $gitExe = Join-Path $env:TEMP "Git-64-bit.exe"
+    Invoke-WebRequest -Uri "https://github.com/git-for-windows/git/releases/download/v2.45.1.windows.1/Git-2.45.1-64-bit.exe" -OutFile $gitExe
+    Start-Process -FilePath $gitExe -ArgumentList "/VERYSILENT", "/NORESTART" -Wait
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
+        [System.Environment]::GetEnvironmentVariable("Path", "User")
+    if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+        throw "Git install failed"
+    }
+}
+
+function Ensure-AwsCli {
+    $awsExe = "C:\Program Files\Amazon\AWSCLIV2\aws.exe"
+    if (Test-Path $awsExe) { return $awsExe }
+    Write-Host "==> Install AWS CLI v2"
+    $msi = Join-Path $env:TEMP "AWSCLIV2.msi"
+    Invoke-WebRequest -Uri "https://awscli.amazonaws.com/AWSCLIV2.msi" -OutFile $msi
+    Start-Process -FilePath "msiexec.exe" -ArgumentList "/i", $msi, "/quiet", "/norestart" -Wait
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
+        [System.Environment]::GetEnvironmentVariable("Path", "User")
+    if (-not (Test-Path $awsExe)) { throw "AWS CLI install failed" }
+    return $awsExe
+}
+
+Ensure-Git | Out-Null
+$null = Ensure-AwsCli
+
 function Get-GitHubCloneUrl {
     param([string]$Repo)
     $aws = Get-Command aws -ErrorAction SilentlyContinue
