@@ -39,6 +39,33 @@ function Ensure-AwsCli {
 Ensure-Git | Out-Null
 $null = Ensure-AwsCli
 
+function Ensure-Python312 {
+    Refresh-SessionPath
+    if (Get-Command python -ErrorAction SilentlyContinue) { return }
+    foreach ($path in @(
+        "C:\Program Files\Python312\python.exe",
+        "C:\Program Files\Python313\python.exe"
+    )) {
+        if (Test-Path $path) { return }
+    }
+    Write-Host "==> Install Python 3.12"
+    $pyExe = Join-Path $env:TEMP "python-3.12.8-amd64.exe"
+    Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.12.8/python-3.12.8-amd64.exe" -OutFile $pyExe
+    Start-Process -FilePath $pyExe -ArgumentList "/quiet", "InstallAllUsers=1", "PrependPath=1", "Include_pip=1" -Wait
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
+        [System.Environment]::GetEnvironmentVariable("Path", "User")
+    if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
+        throw "Python install failed"
+    }
+}
+
+function Refresh-SessionPath {
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
+        [System.Environment]::GetEnvironmentVariable("Path", "User")
+}
+
+Ensure-Python312 | Out-Null
+
 function Get-GitHubCloneUrl {
     param([string]$Repo)
     $aws = Get-Command aws -ErrorAction SilentlyContinue
