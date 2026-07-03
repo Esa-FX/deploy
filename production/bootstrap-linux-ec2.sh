@@ -39,9 +39,14 @@ sudo mkdir -p "$ROOT/secrets"
 sudo chown -R "$(whoami):$(whoami)" "$ROOT" 2>/dev/null || true
 
 if ! docker compose version >/dev/null 2>&1; then
-  echo "==> installing docker compose plugin"
-  sudo dnf install -y docker-compose-plugin
+  echo "==> installing docker compose plugin (manual)"
+  sudo mkdir -p /usr/libexec/docker/cli-plugins
+  sudo curl -fsSL \
+    "https://github.com/docker/compose/releases/download/v2.27.1/docker-compose-linux-x86_64" \
+    -o /usr/libexec/docker/cli-plugins/docker-compose
+  sudo chmod +x /usr/libexec/docker/cli-plugins/docker-compose
 fi
+docker compose version
 
 cd "$ROOT"
 
