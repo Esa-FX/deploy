@@ -45,12 +45,22 @@ fi
 
 clone_repo() {
   local name="$1"
+  if [[ -z "${GITHUB_TOKEN:-}" ]]; then
+    GITHUB_TOKEN="$(aws secretsmanager get-secret-value --secret-id esafx/production/github-clone --region "$REGION" --query SecretString --output text 2>/dev/null || true)"
+  fi
+  local url="https://github.com/Esa-FX/${name}.git"
+  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+    url="https://x-access-token:${GITHUB_TOKEN}@github.com/Esa-FX/${name}.git"
+  fi
   if [[ -d "$name/.git" ]]; then
+    git -C "$name" remote set-url origin "$url"
     git -C "$name" fetch origin "$BRANCH"
     git -C "$name" checkout "$BRANCH"
     git -C "$name" pull origin "$BRANCH"
+    git -C "$name" remote set-url origin "https://github.com/Esa-FX/${name}.git"
   else
-    git clone --branch "$BRANCH" --depth 1 "https://github.com/Esa-FX/${name}.git" "$name"
+    git clone --branch "$BRANCH" --depth 1 "$url" "$name"
+    git -C "$name" remote set-url origin "https://github.com/Esa-FX/${name}.git"
   fi
 }
 
