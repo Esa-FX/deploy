@@ -249,3 +249,25 @@ resource "aws_iam_role_policy" "kms_core" {
     ]
   })
 }
+
+resource "aws_iam_role_policy" "cognito_staff_admin_core" {
+  name = "${local.name_prefix}-cognito-staff-admin"
+  role = aws_iam_role.ec2_core.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "cognito-idp:AdminCreateUser",
+          "cognito-idp:AdminSetUserPassword",
+          "cognito-idp:AdminUpdateUserAttributes",
+          "cognito-idp:AdminGetUser",
+          "cognito-idp:AdminDisableUser",
+          "cognito-idp:AdminEnableUser",
+        ]
+        Resource = aws_cognito_user_pool.staff.arn
+      },
+    ]
+  })
+}
