@@ -98,7 +98,7 @@ write_env() {
 }
 
 PII_ENV="$ROOT/pii-vault-service/.env.production"
-if [[ "$TIER" == "core" || "$TIER" == "voip" ]]; then
+if [[ "$TIER" == "core" ]]; then
   if [[ ! -f "$PII_ENV" ]] || ! grep -q '^PII_ENCRYPTION_KEY=.' "$PII_ENV" 2>/dev/null; then
     PII_FERNET="$(python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())" 2>/dev/null || openssl rand -base64 32)"
     PII_PHONE="$(openssl rand -hex 16)"
@@ -167,9 +167,6 @@ if [[ "$TIER" == "crm" ]]; then
 fi
 
 if [[ "$TIER" == "voip" ]]; then
-  write_env "$PII_ENV" \
-    PII_VAULT_SERVICE_URL "http://${CORE_IP}:8004"
-
   write_env "$ROOT/voip-gateway-service/.env.production" \
     DB_HOST "$CORE_HOST" DB_PASSWORD "$CORE_PASS" DB_SSL true DB_SSL_CA_FILE "$ROOT/global-bundle.pem" \
     INTERNAL_TOKEN "$CLIENT_TOKEN" \
@@ -177,10 +174,6 @@ if [[ "$TIER" == "voip" ]]; then
     AUDIT_LOG_SERVICE_URL "http://${CORE_IP}:8005" AUDIT_LOG_API_KEY "$AUDIT_KEY" \
     VOIP_PROVIDER mock ENVIRONMENT production \
     S3_RECORDINGS_BUCKET "$CALL_BUCKET" AWS_REGION "$REGION"
-
-  write_env "$ROOT/audit-log-service/.env.production" \
-    DB_HOST "$CORE_HOST" DB_PASSWORD "$CORE_PASS" DB_SSL true \
-    AUDIT_LOG_API_KEY "$AUDIT_KEY" SQS_QUEUE_URL "$AUDIT_SQS" AWS_REGION "$REGION"
 
   chmod +x "$ROOT/deploy/production/"*.sh
   "$ROOT/deploy/production/deploy-voip-ec2.sh"
