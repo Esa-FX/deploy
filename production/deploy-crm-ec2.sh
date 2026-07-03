@@ -28,6 +28,7 @@ docker compose -f "$COMPOSE_FILE" --profile migrate run --rm --build client-migr
 echo "==> sync tokens + trading DB env"
 "$REPO_ROOT/deploy/production/sync-service-tokens-env.sh"
 "$REPO_ROOT/deploy/production/sync-crm-trading-db-env.sh"
+"$REPO_ROOT/deploy/production/sync-smtp-env.sh" || true
 
 echo "==> build & start CRM tier"
 docker compose -f "$COMPOSE_FILE" build crm-api client

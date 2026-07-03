@@ -37,12 +37,18 @@ set_env_var() {
 CRM_ENV="$REPO_ROOT/crm-service/.env.${ENV_SUFFIX}"
 CLIENT_ENV="$REPO_ROOT/client-service/.env.${ENV_SUFFIX}"
 PII_ENV="$REPO_ROOT/pii-vault-service/.env.${ENV_SUFFIX}"
+VOIP_ENV="$REPO_ROOT/voip-gateway-service/.env.${ENV_SUFFIX}"
 
 set_env_var "$CRM_ENV" CLIENT_SERVICE_TOKEN "$CLIENT_TOKEN"
 set_env_var "$CRM_ENV" MT_BRIDGE_SERVICE_TOKEN "$MT_TOKEN"
 set_env_var "$CRM_ENV" PII_VAULT_SERVICE_TOKEN "$PII_TOKEN"
+set_env_var "$CRM_ENV" VOIP_GATEWAY_TOKEN "$CLIENT_TOKEN"
 set_env_var "$CLIENT_ENV" INTERNAL_SERVICE_TOKEN "$CLIENT_TOKEN"
 set_env_var "$CLIENT_ENV" MT_BRIDGE_SERVICE_TOKEN "$MT_TOKEN"
 set_env_var "$PII_ENV" SERVICE_TOKEN "$PII_TOKEN"
+set_env_var "$VOIP_ENV" INTERNAL_TOKEN "$CLIENT_TOKEN"
 
 echo "Synced service tokens from $SECRET_ID"
+echo "Recreate containers if running:"
+echo "  CRM tier: docker compose -f deploy/production/docker-compose.crm.yml up -d --force-recreate crm-api"
+echo "  VoIP tier: docker compose -f deploy/production/docker-compose.voip.yml up -d --force-recreate voip-gateway"

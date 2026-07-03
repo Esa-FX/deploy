@@ -13,6 +13,9 @@ require_env() {
 
 require_env "$REPO_ROOT/voip-gateway-service/.env.production"
 
+echo "==> sync service tokens"
+"$REPO_ROOT/deploy/production/sync-service-tokens-env.sh"
+
 CA_BUNDLE="${RDS_CA_BUNDLE:-/opt/esafx/global-bundle.pem}"
 if [[ ! -f "$CA_BUNDLE" ]]; then
   sudo mkdir -p "$(dirname "$CA_BUNDLE")"

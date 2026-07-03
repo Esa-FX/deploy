@@ -42,8 +42,9 @@ docker compose -f "$COMPOSE_FILE" --profile migrate run --rm --build audit-migra
 echo "==> sync crm-api trading DB env (readonly secret → .env.staging + password file)"
 "$REPO_ROOT/deploy/staging/sync-crm-trading-db-env.sh"
 
-echo "==> sync inter-service tokens (Secrets Manager → crm / client / pii-vault .env.staging)"
+echo "==> sync inter-service tokens (Secrets Manager → crm / client / pii-vault / voip .env.staging)"
 "$REPO_ROOT/deploy/staging/sync-service-tokens-env.sh"
+"$REPO_ROOT/deploy/staging/sync-smtp-env.sh" || true
 
 echo "==> build & start"
 docker compose -f "$COMPOSE_FILE" build identity pii-vault audit-log voip-gateway crm-api client

@@ -51,7 +51,7 @@ terraform output
 | `redis_endpoint` | Redis URL |
 | `cognito_user_pool_id`, `cognito_app_client_id`, `cognito_domain` | CRM SPA + identity |
 | `crm_frontend_bucket_name`, `cloudfront_distribution_id` | CRM static deploy |
-| `call_recordings_bucket_name`, `ftd_uploads_bucket_name` | voip / crm S3 |
+| `call_recordings_bucket_name`, `ftd_uploads_bucket_name` | voip / crm S3 — **set `S3_FTD_UPLOADS_BUCKET` on crm-api** |
 | `audit_event_bus_name`, `audit_sqs_queue_url` | audit-log-service |
 | Secret ARNs | populate Secrets Manager values used by compose |
 
@@ -105,6 +105,21 @@ On each EC2 (via SSM), clone service repos under `/opt/esafx` and `git pull orig
 ```
 
 Compose files: `docker-compose.core.yml`, `docker-compose.voip.yml`, `docker-compose.crm.yml`.
+
+**Full checklist:** [CHECKLIST.md](./CHECKLIST.md)  
+**Staging vs production env matrix:** [ENV-PARITY.md](./ENV-PARITY.md)
+
+### Critical env vars (often missed)
+
+| Service | Variable | How to set |
+|---------|----------|------------|
+| crm-api | `S3_FTD_UPLOADS_BUCKET` | `terraform output -raw ftd_uploads_bucket_name` |
+| crm-api | `VOIP_GATEWAY_TOKEN` | `sync-service-tokens-env.sh` (= `client` token) |
+| crm-api | `SMTP_*`, `FTD_NOTIFY_TO` | Copy from staging or `sync-smtp-env.sh` |
+| voip-gateway | `INTERNAL_TOKEN` | `sync-service-tokens-env.sh` |
+| voip-gateway | `AMI_*`, `SFTP_*` | Copy from staging (same PBX vendor) |
+
+`bootstrap-linux-ec2.sh` sets FTD bucket and VoIP token on CRM tier; SMTP and AMI credentials must be copied from staging.
 
 ## Phase 3 — Legacy CSV import
 
