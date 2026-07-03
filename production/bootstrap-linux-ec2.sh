@@ -37,6 +37,12 @@ fi
 
 sudo mkdir -p "$ROOT/secrets"
 sudo chown -R "$(whoami):$(whoami)" "$ROOT" 2>/dev/null || true
+
+if ! docker compose version >/dev/null 2>&1; then
+  echo "==> installing docker compose plugin"
+  sudo dnf install -y docker-compose-plugin
+fi
+
 cd "$ROOT"
 
 if [[ ! -f "$ROOT/global-bundle.pem" ]]; then
