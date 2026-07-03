@@ -112,6 +112,22 @@ S3_RECORDINGS_PREFIX=recordings
 AWS_REGION=ap-southeast-3
 ```
 
+**FTD uploads (S3):** provision in `deploy/staging/terraform` (`ftd-uploads.tf`). Set on `crm-service/.env.staging`:
+
+```bash
+S3_FTD_UPLOADS_BUCKET=esafx-staging-ftd-uploads-612524168745
+AWS_REGION=ap-southeast-3
+```
+
+See `deploy/staging/terraform/README.md`. Sync tokens (includes `VOIP_GATEWAY_TOKEN`):
+
+```bash
+./deploy/staging/sync-service-tokens-env.sh
+./deploy/staging/sync-smtp-env.sh || true
+```
+
+**SMTP (FTD emails):** set `SMTP_ENABLED=true` and provider vars on `crm-service/.env.staging` (copy to production). See `crm-service/docs/ftd-email.md`.
+
 Set on `crm-service/.env.staging`:
 
 ```bash

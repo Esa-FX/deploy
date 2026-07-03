@@ -53,19 +53,23 @@ set_env_var() {
 CRM_ENV="$REPO_ROOT/crm-service/.env.staging"
 CLIENT_ENV="$REPO_ROOT/client-service/.env.staging"
 PII_ENV="$REPO_ROOT/pii-vault-service/.env.staging"
+VOIP_ENV="$REPO_ROOT/voip-gateway-service/.env.staging"
 
 set_env_var "$CRM_ENV" CLIENT_SERVICE_TOKEN "$CLIENT_TOKEN"
 set_env_var "$CRM_ENV" MT_BRIDGE_SERVICE_TOKEN "$MT_TOKEN"
 set_env_var "$CRM_ENV" PII_VAULT_SERVICE_TOKEN "$PII_TOKEN"
+set_env_var "$CRM_ENV" VOIP_GATEWAY_TOKEN "$CLIENT_TOKEN"
 
 set_env_var "$CLIENT_ENV" INTERNAL_SERVICE_TOKEN "$CLIENT_TOKEN"
 set_env_var "$CLIENT_ENV" MT_BRIDGE_SERVICE_TOKEN "$MT_TOKEN"
 
 set_env_var "$PII_ENV" SERVICE_TOKEN "$PII_TOKEN"
+set_env_var "$VOIP_ENV" INTERNAL_TOKEN "$CLIENT_TOKEN"
 
 echo "Synced service tokens from $SECRET_ID into:"
-echo "  - crm-service: CLIENT_SERVICE_TOKEN, MT_BRIDGE_SERVICE_TOKEN, PII_VAULT_SERVICE_TOKEN"
+echo "  - crm-service: CLIENT_SERVICE_TOKEN, MT_BRIDGE_SERVICE_TOKEN, PII_VAULT_SERVICE_TOKEN, VOIP_GATEWAY_TOKEN"
 echo "  - client-service: INTERNAL_SERVICE_TOKEN, MT_BRIDGE_SERVICE_TOKEN"
 echo "  - pii-vault-service: SERVICE_TOKEN"
+echo "  - voip-gateway-service: INTERNAL_TOKEN"
 echo "Recreate affected containers:"
-echo "  docker compose -f deploy/staging/docker-compose.app.yml up -d --force-recreate crm-api client pii-vault"
+echo "  docker compose -f deploy/staging/docker-compose.app.yml up -d --force-recreate crm-api client pii-vault voip-gateway"
