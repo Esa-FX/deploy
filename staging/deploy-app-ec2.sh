@@ -23,7 +23,7 @@ require_env() {
   fi
 }
 
-for svc in identity-service crm-service pii-vault-service client-service audit-log-service voip-gateway-service; do
+for svc in identity-service crm-service pii-vault-service client-service audit-log-service voip-gateway-service whatsapp-gateway-service; do
   require_env "$REPO_ROOT/$svc/.env.staging"
 done
 
@@ -47,14 +47,15 @@ echo "==> sync inter-service tokens (Secrets Manager → crm / client / pii-vaul
 "$REPO_ROOT/deploy/staging/sync-smtp-env.sh" || true
 
 echo "==> build & start"
-docker compose -f "$COMPOSE_FILE" build identity pii-vault audit-log voip-gateway crm-api client
-docker compose -f "$COMPOSE_FILE" up -d identity pii-vault audit-log voip-gateway crm-api client
+docker compose -f "$COMPOSE_FILE" build identity pii-vault audit-log voip-gateway whatsapp-gateway crm-api client
+docker compose -f "$COMPOSE_FILE" up -d identity pii-vault audit-log voip-gateway whatsapp-gateway crm-api client
 
 echo "==> health"
 curl -sf "http://127.0.0.1:8000/health" && echo " identity OK"
 curl -sf "http://127.0.0.1:8004/health" && echo " pii-vault OK"
 curl -sf "http://127.0.0.1:8005/health" && echo " audit-log OK"
 curl -sf "http://127.0.0.1:8006/health" && echo " voip-gateway OK"
+curl -sf "http://127.0.0.1:8007/health" && echo " whatsapp-gateway OK"
 curl -sf "http://127.0.0.1:${CRM_PORT:-8001}/health" && echo " crm-api OK"
 curl -sf "http://127.0.0.1:${CLIENT_PORT:-8002}/health" && echo " client OK"
 
