@@ -22,6 +22,7 @@ Copy each `*.env.staging.example` → `.env.staging` and fill from Terraform out
 | audit-log | `audit-log-service/.env.staging` |
 | crm-api | `crm-service/.env.staging` |
 | voip-gateway | `voip-gateway-service/.env.staging` |
+| whatsapp-gateway | `whatsapp-gateway-service/.env.staging` |
 | client | `client-service/.env.staging` |
 | mt-bridge | `mt-bridge-service/.env.staging` |
 | CRM build | `crm/.env.staging` |
@@ -80,6 +81,7 @@ IDENTITY_SERVICE_URL=http://identity:8000
 PII_VAULT_SERVICE_URL=http://pii-vault:8004
 AUDIT_LOG_SERVICE_URL=http://audit-log:8005
 VOIP_GATEWAY_URL=http://voip-gateway:8006
+WHATSAPP_GATEWAY_URL=http://whatsapp-gateway:8007
 CLIENT_SERVICE_URL=http://client:8000
 ```
 
@@ -119,7 +121,7 @@ S3_FTD_UPLOADS_BUCKET=esafx-staging-ftd-uploads-612524168745
 AWS_REGION=ap-southeast-3
 ```
 
-See `deploy/staging/terraform/README.md`. Sync tokens (includes `VOIP_GATEWAY_TOKEN`):
+See `deploy/staging/terraform/README.md`. Sync tokens (includes `VOIP_GATEWAY_TOKEN`, `WHATSAPP_GATEWAY_TOKEN`):
 
 ```bash
 ./deploy/staging/sync-service-tokens-env.sh
