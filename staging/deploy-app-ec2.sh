@@ -46,6 +46,17 @@ echo "==> sync inter-service tokens (Secrets Manager → crm / client / pii-vaul
 "$REPO_ROOT/deploy/staging/sync-service-tokens-env.sh"
 "$REPO_ROOT/deploy/staging/sync-smtp-env.sh" || true
 
+WA_ENV="$REPO_ROOT/whatsapp-gateway-service/.env.staging"
+if [[ -f "$WA_ENV" ]]; then
+  echo "==> normalize whatsapp-gateway staging env"
+  sed -i 's|^NEONIZE_DATABASE_URL=.*|NEONIZE_DATABASE_URL=/app/data/neonize_sessions.db|' "$WA_ENV"
+  sed -i 's|^APP_NAME=.*|APP_NAME=esafx-whatsapp-gateway|' "$WA_ENV"
+  grep -q '^NEONIZE_DATABASE_URL=' "$WA_ENV" || echo 'NEONIZE_DATABASE_URL=/app/data/neonize_sessions.db' >> "$WA_ENV"
+  grep -q '^APP_NAME=' "$WA_ENV" || echo 'APP_NAME=esafx-whatsapp-gateway' >> "$WA_ENV"
+fi
+
+"$REPO_ROOT/deploy/staging/prepare-whatsapp-gateway.sh"
+
 echo "==> build & start"
 docker compose -f "$COMPOSE_FILE" build identity pii-vault audit-log voip-gateway whatsapp-gateway crm-api client
 docker compose -f "$COMPOSE_FILE" up -d identity pii-vault audit-log voip-gateway whatsapp-gateway crm-api client

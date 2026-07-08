@@ -1,0 +1,25 @@
+{
+  "commands": [
+    "set -euxo pipefail",
+    "cd /opt/esafx",
+    "REGION=ap-southeast-3",
+    "GITHUB_TOKEN=$(aws secretsmanager get-secret-value --secret-id esafx/staging/github-clone --region $REGION --query SecretString --output text)",
+    "git_pull() { local name=$1 branch=$2; local url=\"https://x-access-token:${GITHUB_TOKEN}@github.com/Esa-FX/${name}.git\"; if [ ! -d \"$name/.git\" ]; then git clone --branch \"$branch\" --single-branch \"$url\" \"$name\"; git -C \"$name\" remote set-url origin \"https://github.com/Esa-FX/${name}.git\"; git -C \"$name\" log -1 --oneline; return; fi; git -C \"$name\" remote set-url origin \"$url\"; git -C \"$name\" fetch origin \"$branch\"; git -C \"$name\" checkout \"$branch\"; git -C \"$name\" reset --hard \"origin/$branch\"; git -C \"$name\" remote set-url origin \"https://github.com/Esa-FX/${name}.git\"; git -C \"$name\" log -1 --oneline; }",
+    "git_pull deploy main",
+    "git_pull crm-service staging",
+    "if [ -d whatsapp-gateway-service ] && [ ! -d whatsapp-gateway-service/.git ]; then rm -rf whatsapp-gateway-service; fi",
+    "git_pull whatsapp-gateway-service staging",
+    "mkdir -p /opt/esafx/data",
+    "chmod +x deploy/staging/*.sh",
+    "if [ ! -f whatsapp-gateway-service/.env.staging ]; then cp whatsapp-gateway-service/.env.staging.example whatsapp-gateway-service/.env.staging; fi",
+    "python3 -c \"import re,pathlib;root=pathlib.Path('/opt/esafx');crm=(root/'crm-service/.env.staging').read_text();wa=root/'whatsapp-gateway-service/.env.staging';text=wa.read_text();get=lambda k: (m.group(1).strip() if (m:=re.search(rf'^{re.escape(k)}=(.*)$',crm,re.M)) else '');pairs={'DB_HOST':get('DB_HOST'),'DB_PORT':get('DB_PORT') or '5432','DB_NAME':get('DB_NAME') or 'esafx_core','DB_USER':get('DB_USER'),'DB_PASSWORD':get('DB_PASSWORD'),'DB_SSL':get('DB_SSL') or 'true','DB_SSL_CA_FILE':get('DB_SSL_CA_FILE') or '/opt/esafx/global-bundle.pem','REDIS_URL':get('REDIS_URL'),'AWS_REGION':get('AWS_REGION') or 'ap-southeast-3','S3_CHAT_MEDIA_BUCKET':'esafx-staging-chat-media-612524168745','S3_CHAT_MEDIA_PREFIX':'chat-media','WHATSAPP_PROVIDER':'neonize','NEONIZE_DATABASE_URL':'/app/data/neonize_sessions.db','APP_NAME':'esafx-whatsapp-gateway','ENVIRONMENT':'staging','DEBUG':'false'}; [ (text:=re.sub(rf'^{re.escape(k)}=.*$',f'{k}={v}',text,flags=re.M) if re.search(rf'^{re.escape(k)}=',text,re.M) else (text:=text.rstrip()+f'\\n{k}={v}\\n')) for k,v in pairs.items() if v ]; wa.write_text(text)\"",
+    "sed -i 's|^WHATSAPP_GATEWAY_URL=.*|WHATSAPP_GATEWAY_URL=http://whatsapp-gateway:8007|' crm-service/.env.staging",
+    "grep -q '^WHATSAPP_GATEWAY_URL=' crm-service/.env.staging || echo 'WHATSAPP_GATEWAY_URL=http://whatsapp-gateway:8007' >> crm-service/.env.staging",
+    "./deploy/staging/prepare-whatsapp-gateway.sh",
+    "unset GITHUB_TOKEN",
+    "./deploy/staging/deploy-app-ec2.sh",
+    "sleep 25",
+    "curl -sf http://127.0.0.1:8007/health",
+    "docker ps --format 'table {{.Names}}\t{{.Status}}' | grep -E 'whatsapp|crm-api'"
+  ]
+}
