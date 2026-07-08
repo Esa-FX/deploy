@@ -58,6 +58,9 @@ fi
 "$REPO_ROOT/deploy/staging/prepare-whatsapp-gateway.sh"
 
 echo "==> build & start"
+docker compose -f "$COMPOSE_FILE" stop whatsapp-gateway 2>/dev/null || true
+docker rm -f esafx-whatsapp-gateway 2>/dev/null || true
+fuser -k 8007/tcp 2>/dev/null || true
 docker compose -f "$COMPOSE_FILE" build identity pii-vault audit-log voip-gateway whatsapp-gateway crm-api client
 docker compose -f "$COMPOSE_FILE" up -d identity pii-vault audit-log voip-gateway whatsapp-gateway crm-api client
 
