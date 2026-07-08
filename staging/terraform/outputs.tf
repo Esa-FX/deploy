@@ -27,3 +27,18 @@ output "ftd_uploads_prefix" {
   description = "Object key prefix for FTD uploads (deposit_proof, chat_evidence under ftd/)"
   value       = local.ftd_uploads_prefix
 }
+
+output "chat_media_bucket_name" {
+  description = "S3 bucket for WhatsApp chat images — set as S3_CHAT_MEDIA_BUCKET on whatsapp-gateway"
+  value       = aws_s3_bucket.chat_media.bucket
+}
+
+output "chat_media_bucket_arn" {
+  description = "ARN of the WhatsApp chat media bucket"
+  value       = aws_s3_bucket.chat_media.arn
+}
+
+output "chat_media_prefix" {
+  description = "Object key prefix for chat media — set as S3_CHAT_MEDIA_PREFIX on whatsapp-gateway"
+  value       = local.chat_media_prefix
+}

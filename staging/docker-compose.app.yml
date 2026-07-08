@@ -86,7 +86,7 @@ services:
       audit-log:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -127,9 +127,10 @@ services:
       - "8007:8007"
     env_file:
       - ../../whatsapp-gateway-service/.env.staging
-    volumes: *rds-ca-volume
-    depends_on:
-      pii-vault:
+    volumes:
+      - /opt/esafx/global-bundle.pem:/opt/esafx/global-bundle.pem:ro
+      - /opt/esafx/data:/opt/esafx/data
+    depends_on:      pii-vault:
         condition: service_healthy
       audit-log:
         condition: service_healthy
@@ -140,10 +141,9 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 45s
+      start_period: 60s
 
-  client:
-    image: ${CLIENT_IMAGE:-esafx-client:latest}
+  client:    image: ${CLIENT_IMAGE:-esafx-client:latest}
     build:
       context: ../../client-service
       dockerfile: Dockerfile
