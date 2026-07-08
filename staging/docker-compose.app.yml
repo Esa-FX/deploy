@@ -130,7 +130,8 @@ services:
     volumes:
       - /opt/esafx/global-bundle.pem:/opt/esafx/global-bundle.pem:ro
       - /opt/esafx/data:/opt/esafx/data
-    depends_on:      pii-vault:
+    depends_on:
+      pii-vault:
         condition: service_healthy
       audit-log:
         condition: service_healthy
@@ -143,7 +144,8 @@ services:
       retries: 3
       start_period: 60s
 
-  client:    image: ${CLIENT_IMAGE:-esafx-client:latest}
+  client:
+    image: ${CLIENT_IMAGE:-esafx-client:latest}
     build:
       context: ../../client-service
       dockerfile: Dockerfile
