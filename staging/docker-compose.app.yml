@@ -129,7 +129,7 @@ services:
       - ../../whatsapp-gateway-service/.env.staging
     volumes:
       - /opt/esafx/global-bundle.pem:/opt/esafx/global-bundle.pem:ro
-      - /opt/esafx/data:/opt/esafx/data
+      - /opt/esafx/data:/app/data
     depends_on:
       pii-vault:
         condition: service_healthy
