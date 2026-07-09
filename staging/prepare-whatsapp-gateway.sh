@@ -7,6 +7,10 @@ COMPOSE_FILE="${COMPOSE_FILE:-$REPO_ROOT/deploy/staging/docker-compose.app.yml}"
 
 echo "==> prepare whatsapp-gateway (release port 8007)"
 
+DATA_DIR="${REPO_ROOT}/data"
+mkdir -p "$DATA_DIR/wwebjs_auth" "$DATA_DIR/chat-media"
+chmod 777 "$DATA_DIR" "$DATA_DIR/wwebjs_auth" "$DATA_DIR/chat-media" 2>/dev/null || true
+
 docker compose -f "$COMPOSE_FILE" stop whatsapp-gateway 2>/dev/null || true
 docker compose -f "$COMPOSE_FILE" rm -f whatsapp-gateway 2>/dev/null || true
 docker rm -f esafx-whatsapp-gateway 2>/dev/null || true
@@ -15,7 +19,14 @@ if command -v fuser >/dev/null 2>&1; then
   fuser -k 8007/tcp 2>/dev/null || true
 fi
 
-for _ in $(seq 1 10); do
+# Orphan uvicorn/python listeners can survive a failed recreate and block the port.
+if command -v ss >/dev/null 2>&1; then
+  for pid in $(ss -lntp 2>/dev/null | grep ':8007 ' | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u); do
+    kill -9 "$pid" 2>/dev/null || true
+  done
+fi
+
+for _ in $(seq 1 15); do
   if ! ss -lntp 2>/dev/null | grep -q ':8007 '; then
     echo "==> port 8007 is free"
     exit 0

@@ -49,9 +49,11 @@ echo "==> sync inter-service tokens (Secrets Manager → crm / client / pii-vaul
 WA_ENV="$REPO_ROOT/whatsapp-gateway-service/.env.staging"
 if [[ -f "$WA_ENV" ]]; then
   echo "==> normalize whatsapp-gateway staging env"
-  sed -i 's|^NEONIZE_DATABASE_URL=.*|NEONIZE_DATABASE_URL=/app/data/neonize_sessions.db|' "$WA_ENV"
+  sed -i 's|^WHATSAPP_PROVIDER=.*|WHATSAPP_PROVIDER=wwebjs|' "$WA_ENV"
+  sed -i 's|^WWEBJS_AUTH_DIR=.*|WWEBJS_AUTH_DIR=/app/data/wwebjs_auth|' "$WA_ENV"
   sed -i 's|^APP_NAME=.*|APP_NAME=esafx-whatsapp-gateway|' "$WA_ENV"
-  grep -q '^NEONIZE_DATABASE_URL=' "$WA_ENV" || echo 'NEONIZE_DATABASE_URL=/app/data/neonize_sessions.db' >> "$WA_ENV"
+  grep -q '^WHATSAPP_PROVIDER=' "$WA_ENV" || echo 'WHATSAPP_PROVIDER=wwebjs' >> "$WA_ENV"
+  grep -q '^WWEBJS_AUTH_DIR=' "$WA_ENV" || echo 'WWEBJS_AUTH_DIR=/app/data/wwebjs_auth' >> "$WA_ENV"
   grep -q '^APP_NAME=' "$WA_ENV" || echo 'APP_NAME=esafx-whatsapp-gateway' >> "$WA_ENV"
 fi
 
