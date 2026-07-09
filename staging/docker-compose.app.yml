@@ -124,8 +124,10 @@ services:
     container_name: esafx-whatsapp-gateway
     restart: unless-stopped
     shm_size: '512m'
-    ports:
-      - "8007:8007"
+    # No host port publish — MCP server uses 127.0.0.1:8007 on the host.
+    # CRM reaches this service via Docker network: http://whatsapp-gateway:8007
+    expose:
+      - "8007"
     env_file:
       - ../../whatsapp-gateway-service/.env.staging
     volumes:
