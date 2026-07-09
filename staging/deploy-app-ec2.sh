@@ -81,7 +81,7 @@ curl -sf "http://127.0.0.1:8000/health" && echo " identity OK"
 curl -sf "http://127.0.0.1:8004/health" && echo " pii-vault OK"
 curl -sf "http://127.0.0.1:8005/health" && echo " audit-log OK"
 curl -sf "http://127.0.0.1:8006/health" && echo " voip-gateway OK"
-curl -sf "http://127.0.0.1:8007/health" && echo " whatsapp-gateway OK"
+docker exec esafx-whatsapp-gateway curl -sf "http://localhost:8007/health" && echo " whatsapp-gateway OK"
 curl -sf "http://127.0.0.1:${CRM_PORT:-8001}/health" && echo " crm-api OK"
 curl -sf "http://127.0.0.1:${CLIENT_PORT:-8002}/health" && echo " client OK"
 
