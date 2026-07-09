@@ -123,6 +123,7 @@ services:
       dockerfile: Dockerfile
     container_name: esafx-whatsapp-gateway
     restart: unless-stopped
+    shm_size: '512m'
     ports:
       - "8007:8007"
     env_file:
