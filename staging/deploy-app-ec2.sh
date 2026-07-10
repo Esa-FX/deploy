@@ -74,6 +74,10 @@ for svc in "${BUILD_SERVICES[@]}"; do
   echo "==> build $svc"
   docker compose -f "$COMPOSE_FILE" build "$svc"
 done
+
+echo "==> backfill PII search_text (partial lead search)"
+docker compose -f "$COMPOSE_FILE" run --rm -e PYTHONPATH=/app --entrypoint python pii-vault /app/scripts/backfill_search_text.py
+
 docker compose -f "$COMPOSE_FILE" up -d identity pii-vault audit-log voip-gateway whatsapp-gateway crm-api client
 
 echo "==> health"

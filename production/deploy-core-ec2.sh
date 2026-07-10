@@ -37,6 +37,10 @@ echo "==> sync production secrets"
 
 echo "==> build & start core tier"
 docker compose -f "$COMPOSE_FILE" build identity pii-vault audit-log
+
+echo "==> backfill PII search_text (partial lead search)"
+docker compose -f "$COMPOSE_FILE" run --rm -e PYTHONPATH=/app --entrypoint python pii-vault /app/scripts/backfill_search_text.py
+
 docker compose -f "$COMPOSE_FILE" up -d identity pii-vault audit-log
 
 echo "==> health"
