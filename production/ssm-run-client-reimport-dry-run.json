@@ -1,0 +1,17 @@
+{
+  "DocumentName": "AWS-RunShellScript",
+  "InstanceIds": ["i-06c9b4647a1fc8ee8"],
+  "TimeoutSeconds": 900,
+  "Parameters": {
+    "commands": [
+      "set -euxo pipefail",
+      "test -f /tmp/clients.csv",
+      "docker cp /tmp/clients.csv esafx-crm-api:/tmp/clients.csv",
+      "echo '=== DRY-RUN RESET ==='",
+      "docker exec -e PYTHONPATH=/app esafx-crm-api python /app/scripts/reset_crm_clients.py --dry-run",
+      "echo '=== DRY-RUN IMPORT ==='",
+      "docker exec -e PYTHONPATH=/app -e LEGACY_IMPORT_GROUP_HEAD_EMAIL=ale@esafx.co.id esafx-crm-api python /app/scripts/import_legacy_clients.py --dry-run /tmp/clients.csv",
+      "echo 'Dry-run complete. Review output, then run ssm-run-client-reimport-live.json'"
+    ]
+  }
+}

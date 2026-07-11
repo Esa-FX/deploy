@@ -1,0 +1,19 @@
+{
+  "DocumentName": "AWS-RunShellScript",
+  "InstanceIds": ["i-06c9b4647a1fc8ee8"],
+  "TimeoutSeconds": 7200,
+  "Parameters": {
+    "commands": [
+      "set -euxo pipefail",
+      "test -f /tmp/clients.csv",
+      "docker cp /tmp/clients.csv esafx-crm-api:/tmp/clients.csv",
+      "echo '=== LIVE RESET ==='",
+      "docker exec -e PYTHONPATH=/app esafx-crm-api python /app/scripts/reset_crm_clients.py --confirm",
+      "echo '=== LIVE IMPORT (fast MT5 link, no balance sync) ==='",
+      "docker exec -e PYTHONPATH=/app -e LEGACY_IMPORT_GROUP_HEAD_EMAIL=ale@esafx.co.id esafx-crm-api python /app/scripts/import_legacy_clients.py /tmp/clients.csv",
+      "echo '=== POST-CHECK ==='",
+      "docker exec -e PYTHONPATH=/app esafx-crm-api python -c \"from sqlalchemy import text; from scripts.import_legacy_common import create_db_engine; e=create_db_engine(); c=e.connect(); clients=c.execute(text('SELECT COUNT(*) FROM crm.clients')).scalar(); logins=c.execute(text('SELECT COUNT(*) FROM crm.client_phones')).scalar(); print(f'crm_clients={clients} client_phones={logins}')\"",
+      "echo 'Live reimport complete.'"
+    ]
+  }
+}
