@@ -116,7 +116,10 @@ if (-not (Test-Path $envFile)) {
 Write-Host "==> Sync TRADING_DB_* from $TradingSecretId"
 & (Join-Path $InstallRoot "deploy\sync-env-from-secrets.ps1") -SecretId $TradingSecretId -Region $Region -InstallAwsCli
 
-# Production runtime settings (MT5_* left as-is until operator fills secrets)
+Write-Host "==> Sync MT5 credentials from Secrets Manager (if configured)"
+& (Join-Path $InstallRoot "deploy\sync-mt5-from-secrets.ps1") -SecretId "esafx/production/mt5-manager" -Region $Region -InstallAwsCli -ErrorAction SilentlyContinue
+
+# Production runtime settings
 $redisHost = "esafx-production-redis.jwmnjk.0001.apse3.cache.amazonaws.com"
 $lines = Get-Content $envFile | Where-Object {
     $_ -notmatch '^\s*(ENVIRONMENT|PORT|MT_BRIDGE_PORT|REDIS_HOST|REDIS_PORT|REDIS_SSL|REDIS_PASSWORD|HOST|HEALTH_PORT)\s*='

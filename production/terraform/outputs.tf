@@ -135,6 +135,10 @@ output "secret_service_tokens_arn" {
   value = aws_secretsmanager_secret.service_tokens.arn
 }
 
+output "secret_mt5_manager_arn" {
+  value = aws_secretsmanager_secret.mt5_manager.arn
+}
+
 output "secret_audit_api_key_arn" {
   value = aws_secretsmanager_secret.audit_api_key.arn
 }
