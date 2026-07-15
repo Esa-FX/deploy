@@ -1,0 +1,21 @@
+{
+  "DocumentName": "AWS-RunShellScript",
+  "InstanceIds": ["i-06e3745274ed0fac4"],
+  "TimeoutSeconds": 1800,
+  "Parameters": {
+    "commands": [
+      "set -euxo pipefail",
+      "cd /opt/esafx",
+      "REGION=ap-southeast-3",
+      "GITHUB_TOKEN=$(aws secretsmanager get-secret-value --secret-id esafx/staging/github-clone --region $REGION --query SecretString --output text)",
+      "git_pull() { local name=$1 branch=$2; local url=\"https://x-access-token:${GITHUB_TOKEN}@github.com/Esa-FX/${name}.git\"; if [ ! -d \"$name/.git\" ]; then git clone --branch \"$branch\" --single-branch \"$url\" \"$name\"; git -C \"$name\" remote set-url origin \"https://github.com/Esa-FX/${name}.git\"; git -C \"$name\" log -1 --oneline; return; fi; git -C \"$name\" remote set-url origin \"$url\"; git -C \"$name\" fetch origin \"$branch\"; git -C \"$name\" checkout \"$branch\"; git -C \"$name\" reset --hard \"origin/$branch\"; git -C \"$name\" remote set-url origin \"https://github.com/Esa-FX/${name}.git\"; git -C \"$name\" log -1 --oneline; }",
+      "git_pull crm-service staging",
+      "docker compose -f deploy/staging/docker-compose.app.yml build crm-api",
+      "docker compose -f deploy/staging/docker-compose.app.yml up -d --no-deps --force-recreate crm-api",
+      "for i in 1 2 3 4 5 6 7 8 9 10 11 12; do curl -sf http://127.0.0.1:8001/health && break || sleep 5; done",
+      "curl -s http://127.0.0.1:8001/health",
+      "git -C crm-service log -1 --oneline",
+      "unset GITHUB_TOKEN"
+    ]
+  }
+}
