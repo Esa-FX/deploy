@@ -1,0 +1,20 @@
+{
+  "DocumentName": "AWS-RunPowerShellScript",
+  "InstanceIds": ["i-0e81a8ed0002d028e"],
+  "TimeoutSeconds": 300,
+  "Parameters": {
+    "commands": [
+      "$ErrorActionPreference = 'Stop'",
+      "Set-Location C:\\esafx\\mt-bridge-service",
+      "$headers = @{ Authorization = 'Bearer trial' }",
+      "foreach ($login in @(512345, 536969)) {",
+      "  Write-Host \"--- sync login $login ---\"",
+      "  try {",
+      "    $r = Invoke-RestMethod -Method Post -Uri \"http://127.0.0.1:8003/api/v1/mt/accounts/$login/sync\" -Headers $headers -TimeoutSec 120",
+      "    $r | ConvertTo-Json -Depth 4",
+      "  } catch { Write-Host sync_err=$($_.Exception.Message) }",
+      "}",
+      "Write-Host sync_missing_summaries_done"
+    ]
+  }
+}
