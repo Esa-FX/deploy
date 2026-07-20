@@ -132,7 +132,7 @@ $lines += @(
     "HEALTH_PORT=8080",
     "REDIS_HOST=$redisHost",
     "REDIS_PORT=6379",
-    "REDIS_SSL=true",
+    "REDIS_SSL=false",
     "REDIS_PASSWORD="
 )
 $lines | Set-Content -Path $envFile -Encoding utf8
