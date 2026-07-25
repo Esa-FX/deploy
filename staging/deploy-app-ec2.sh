@@ -63,9 +63,10 @@ echo "==> reclaim docker disk before image builds"
 "$REPO_ROOT/deploy/staging/prune-docker-disk.sh"
 
 echo "==> build & start"
+# Gateway is Docker-network only (expose 8007, no host publish). Never fuser -k 8007 —
+# that kills MCP / other host listeners and does not help compose recreate.
 docker compose -f "$COMPOSE_FILE" stop whatsapp-gateway 2>/dev/null || true
 docker rm -f esafx-whatsapp-gateway 2>/dev/null || true
-fuser -k 8007/tcp 2>/dev/null || true
 
 # Build one image at a time — parallel builds exhaust small EC2 disks (Chromium layer).
 export COMPOSE_PARALLEL_LIMIT="${COMPOSE_PARALLEL_LIMIT:-1}"
