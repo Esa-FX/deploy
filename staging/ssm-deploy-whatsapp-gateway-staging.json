@@ -1,0 +1,39 @@
+{
+  "DocumentName": "AWS-RunShellScript",
+  "InstanceIds": ["i-06e3745274ed0fac4"],
+  "TimeoutSeconds": 2400,
+  "Parameters": {
+    "commands": [
+      "set -euo pipefail",
+      "cd /opt/esafx",
+      "REGION=ap-southeast-3",
+      "GITHUB_TOKEN=$(aws secretsmanager get-secret-value --secret-id esafx/staging/github-clone --region \"$REGION\" --query SecretString --output text)",
+      "git_pull() {",
+      "  local repo=\"$1\" branch=\"$2\"",
+      "  git -C \"$repo\" remote set-url origin \"https://x-access-token:${GITHUB_TOKEN}@github.com/Esa-FX/${repo}.git\"",
+      "  git -C \"$repo\" fetch origin \"$branch\"",
+      "  git -C \"$repo\" checkout \"$branch\"",
+      "  git -C \"$repo\" reset --hard \"origin/${branch}\"",
+      "  git -C \"$repo\" log -1 --oneline",
+      "  git -C \"$repo\" remote set-url origin \"https://github.com/Esa-FX/${repo}.git\"",
+      "}",
+      "git_pull whatsapp-gateway-service staging",
+      "git_pull crm-service staging",
+      "git_pull deploy main",
+      "chmod +x deploy/staging/sync-service-tokens-env.sh deploy/staging/prepare-whatsapp-gateway.sh || true",
+      "./deploy/staging/sync-service-tokens-env.sh",
+      "./deploy/staging/prepare-whatsapp-gateway.sh",
+      "export COMPOSE_PARALLEL_LIMIT=1",
+      "docker compose -f deploy/staging/docker-compose.app.yml build crm-api whatsapp-gateway",
+      "docker compose -f deploy/staging/docker-compose.app.yml run --rm crm-migrate || true",
+      "./deploy/staging/prepare-whatsapp-gateway.sh",
+      "docker compose -f deploy/staging/docker-compose.app.yml up -d --force-recreate --no-deps crm-api",
+      "docker compose -f deploy/staging/docker-compose.app.yml up -d --force-recreate --no-deps whatsapp-gateway",
+      "for i in $(seq 1 24); do docker exec esafx-whatsapp-gateway curl -sf http://127.0.0.1:8007/health && break || sleep 5; done",
+      "docker exec esafx-whatsapp-gateway curl -sf http://127.0.0.1:8007/health && echo GW_OK",
+      "docker exec esafx-crm-api curl -sf http://whatsapp-gateway:8007/health && echo CRM_TO_GW_OK",
+      "docker exec esafx-whatsapp-gateway curl -sS http://127.0.0.1:8007/health/whatsapp || true",
+      "docker ps --filter name=esafx-whatsapp-gateway --filter name=esafx-crm-api --format 'table {{.Names}}\\t{{.Status}}'"
+    ]
+  }
+}
