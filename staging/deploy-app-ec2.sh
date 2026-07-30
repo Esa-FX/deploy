@@ -49,11 +49,13 @@ echo "==> sync inter-service tokens (Secrets Manager → crm / client / pii-vaul
 WA_ENV="$REPO_ROOT/whatsapp-gateway-service/.env.staging"
 if [[ -f "$WA_ENV" ]]; then
   echo "==> normalize whatsapp-gateway staging env"
-  sed -i 's|^WHATSAPP_PROVIDER=.*|WHATSAPP_PROVIDER=wwebjs|' "$WA_ENV"
-  sed -i 's|^WWEBJS_AUTH_DIR=.*|WWEBJS_AUTH_DIR=/app/data/wwebjs_auth|' "$WA_ENV"
+  sed -i 's|^WHATSAPP_PROVIDER=.*|WHATSAPP_PROVIDER=waha|' "$WA_ENV"
+  sed -i 's|^WAHA_BASE_URL=.*|WAHA_BASE_URL=http://waha:3000|' "$WA_ENV"
   sed -i 's|^APP_NAME=.*|APP_NAME=esafx-whatsapp-gateway|' "$WA_ENV"
-  grep -q '^WHATSAPP_PROVIDER=' "$WA_ENV" || echo 'WHATSAPP_PROVIDER=wwebjs' >> "$WA_ENV"
-  grep -q '^WWEBJS_AUTH_DIR=' "$WA_ENV" || echo 'WWEBJS_AUTH_DIR=/app/data/wwebjs_auth' >> "$WA_ENV"
+  grep -q '^WHATSAPP_PROVIDER=' "$WA_ENV" || echo 'WHATSAPP_PROVIDER=waha' >> "$WA_ENV"
+  grep -q '^WAHA_BASE_URL=' "$WA_ENV" || echo 'WAHA_BASE_URL=http://waha:3000' >> "$WA_ENV"
+  grep -q '^WAHA_DEFAULT_ENGINE=' "$WA_ENV" || echo 'WAHA_DEFAULT_ENGINE=NOWEB' >> "$WA_ENV"
+  grep -q '^WAHA_MARK_READ_ON_CRM_OPEN=' "$WA_ENV" || echo 'WAHA_MARK_READ_ON_CRM_OPEN=true' >> "$WA_ENV"
   grep -q '^APP_NAME=' "$WA_ENV" || echo 'APP_NAME=esafx-whatsapp-gateway' >> "$WA_ENV"
 fi
 
