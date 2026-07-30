@@ -89,6 +89,8 @@ for svc in "${BUILD_SERVICES[@]}"; do
 done
 
 echo "==> pull WAHA image"
+chmod +x "$REPO_ROOT/deploy/staging/prune-docker-disk.sh" || true
+"$REPO_ROOT/deploy/staging/prune-docker-disk.sh"
 docker compose -f "$COMPOSE_FILE" pull waha
 
 echo "==> backfill PII search_text (partial lead search)"

@@ -34,6 +34,8 @@
       "chmod 777 /opt/esafx/data/waha-sessions /opt/esafx/data/chat-media 2>/dev/null || true",
       "./deploy/staging/prepare-whatsapp-gateway.sh",
       "export COMPOSE_PARALLEL_LIMIT=1",
+      "chmod +x deploy/staging/prune-docker-disk.sh || true",
+      "./deploy/staging/prune-docker-disk.sh",
       "docker compose -f deploy/staging/docker-compose.app.yml pull waha",
       "docker compose -f deploy/staging/docker-compose.app.yml build crm-api whatsapp-gateway",
       "docker compose -f deploy/staging/docker-compose.app.yml run --rm crm-migrate",
