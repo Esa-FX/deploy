@@ -1,0 +1,20 @@
+{
+  "DocumentName": "AWS-RunShellScript",
+  "InstanceIds": ["i-06e3745274ed0fac4"],
+  "TimeoutSeconds": 600,
+  "Parameters": {
+    "commands": [
+      "set -euo pipefail",
+      "cd /opt/esafx",
+      "chmod +x deploy/staging/prune-docker-disk.sh || true",
+      "./deploy/staging/prune-docker-disk.sh || true",
+      "docker compose -f deploy/staging/docker-compose.app.yml pull waha",
+      "docker compose -f deploy/staging/docker-compose.app.yml up -d --force-recreate waha",
+      "for i in $(seq 1 24); do docker exec esafx-waha curl -sf http://127.0.0.1:3000/health && break || sleep 5; done",
+      "docker exec esafx-waha curl -sf http://127.0.0.1:3000/health && echo WAHA_OK",
+      "docker compose -f deploy/staging/docker-compose.app.yml up -d --force-recreate --no-deps whatsapp-gateway",
+      "docker exec esafx-whatsapp-gateway curl -sf http://127.0.0.1:8007/health/whatsapp | head -c 400",
+      "docker ps --filter name=esafx-waha --filter name=esafx-whatsapp-gateway --format 'table {{.Names}}\\t{{.Status}}'"
+    ]
+  }
+}
