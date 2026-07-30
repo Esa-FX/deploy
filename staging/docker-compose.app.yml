@@ -116,6 +116,25 @@ services:
       retries: 3
       start_period: 30s
 
+  waha:
+    image: ${WAHA_IMAGE:-devlikeapro/waha:latest}
+    container_name: esafx-waha
+    restart: unless-stopped
+    expose:
+      - "3000"
+    env_file:
+      - ../../whatsapp-gateway-service/.env.staging
+    environment:
+      WHATSAPP_DEFAULT_ENGINE: NOWEB
+    volumes:
+      - /opt/esafx/data/waha-sessions:/app/.sessions
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
   whatsapp-gateway:
     image: ${WHATSAPP_GATEWAY_IMAGE:-esafx-whatsapp-gateway:latest}
     build:
@@ -123,7 +142,6 @@ services:
       dockerfile: Dockerfile
     container_name: esafx-whatsapp-gateway
     restart: unless-stopped
-    shm_size: '512m'
     # No host port publish — MCP server uses 127.0.0.1:8007 on the host.
     # CRM reaches this service via Docker network: http://whatsapp-gateway:8007
     expose:
@@ -134,6 +152,8 @@ services:
       - /opt/esafx/global-bundle.pem:/opt/esafx/global-bundle.pem:ro
       - /opt/esafx/data:/app/data
     depends_on:
+      waha:
+        condition: service_healthy
       pii-vault:
         condition: service_healthy
       audit-log:
