@@ -1,0 +1,15 @@
+{
+  "DocumentName": "AWS-RunShellScript",
+  "InstanceIds": ["i-06e3745274ed0fac4"],
+  "TimeoutSeconds": 120,
+  "Parameters": {
+    "commands": [
+      "cd /opt/esafx",
+      "docker logs esafx-waha --tail 40 2>&1",
+      "docker inspect esafx-waha --format '{{json .State.Health}}' 2>&1 | head -c 800",
+      "WA_KEY=$(grep '^WAHA_API_KEY=' whatsapp-gateway-service/.env.staging | cut -d= -f2- | head -1)",
+      "docker exec esafx-waha sh -c 'curl -sf -H \"X-Api-Key: $WA_KEY\" http://127.0.0.1:3000/health && echo OK_WITH_KEY' || echo CURL_FAIL",
+      "docker exec esafx-whatsapp-gateway sh -c 'curl -sf http://waha:3000/health && echo GW_TO_WAHA_OK' || echo GW_TO_WAHA_FAIL"
+    ]
+  }
+}

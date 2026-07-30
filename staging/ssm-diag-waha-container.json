@@ -1,0 +1,12 @@
+{
+  "DocumentName": "AWS-RunShellScript",
+  "InstanceIds": ["i-06e3745274ed0fac4"],
+  "TimeoutSeconds": 120,
+  "Parameters": {
+    "commands": [
+      "docker ps -a --filter name=esafx-waha --format 'table {{.Names}}\\t{{.Status}}'",
+      "docker logs esafx-waha --tail 30 2>&1 || true",
+      "grep -E '^(WHATSAPP_PROVIDER|WAHA_)' whatsapp-gateway-service/.env.staging | sed 's/WAHA_API_KEY=.*/WAHA_API_KEY=***redacted***/'"
+    ]
+  }
+}

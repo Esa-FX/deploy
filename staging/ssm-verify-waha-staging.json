@@ -1,0 +1,14 @@
+{
+  "DocumentName": "AWS-RunShellScript",
+  "InstanceIds": ["i-06e3745274ed0fac4"],
+  "TimeoutSeconds": 120,
+  "Parameters": {
+    "commands": [
+      "docker ps --filter name=esafx-waha --filter name=esafx-whatsapp-gateway --filter name=esafx-crm-api --format 'table {{.Names}}\\t{{.Status}}'",
+      "docker exec esafx-waha curl -sf http://127.0.0.1:3000/health && echo WAHA_OK || echo WAHA_FAIL",
+      "docker exec esafx-whatsapp-gateway curl -sf http://127.0.0.1:8007/health && echo GW_OK || echo GW_FAIL",
+      "docker exec esafx-whatsapp-gateway curl -sS http://127.0.0.1:8007/health/whatsapp | head -c 500",
+      "docker exec esafx-crm-api curl -sf http://whatsapp-gateway:8007/health && echo CRM_TO_GW_OK || echo CRM_TO_GW_FAIL"
+    ]
+  }
+}
