@@ -11,8 +11,8 @@ COMPOSE_FILE="${COMPOSE_FILE:-$REPO_ROOT/deploy/staging/docker-compose.app.yml}"
 echo "==> prepare whatsapp-gateway (stop container; no host port reclaim)"
 
 DATA_DIR="${REPO_ROOT}/data"
-mkdir -p "$DATA_DIR/wwebjs_auth" "$DATA_DIR/chat-media"
-chmod 777 "$DATA_DIR" "$DATA_DIR/wwebjs_auth" "$DATA_DIR/chat-media" 2>/dev/null || true
+mkdir -p "$DATA_DIR/chat-media"
+chmod 777 "$DATA_DIR" "$DATA_DIR/chat-media" 2>/dev/null || true
 
 docker compose -f "$COMPOSE_FILE" stop -t 30 whatsapp-gateway 2>/dev/null || true
 docker compose -f "$COMPOSE_FILE" rm -f whatsapp-gateway 2>/dev/null || true
