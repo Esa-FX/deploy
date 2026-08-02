@@ -1,0 +1,31 @@
+# AWS Distro for OpenTelemetry — local OTLP receiver on CRM EC2.
+# crm-api sends OTLP HTTP to otel-collector:4318; collector exports to X-Ray + CloudWatch EMF.
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+
+exporters:
+  awsxray:
+    region: ap-southeast-3
+  awsemf:
+    region: ap-southeast-3
+    namespace: EsaFX/CRM
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [awsxray]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [awsemf]

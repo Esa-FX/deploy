@@ -29,10 +29,12 @@ echo "==> sync tokens + trading DB env"
 "$REPO_ROOT/deploy/production/sync-service-tokens-env.sh"
 "$REPO_ROOT/deploy/production/sync-crm-trading-db-env.sh"
 "$REPO_ROOT/deploy/production/sync-smtp-env.sh" || true
+"$REPO_ROOT/deploy/production/sync-elevenlabs-env.sh" || true
+"$REPO_ROOT/deploy/production/sync-otel-env.sh" || true
 
 echo "==> build & start CRM tier"
 docker compose -f "$COMPOSE_FILE" build crm-api client
-docker compose -f "$COMPOSE_FILE" up -d crm-api client
+docker compose -f "$COMPOSE_FILE" up -d otel-collector crm-api client
 
 curl -sf "http://127.0.0.1:8001/health" && echo " crm-api OK"
 curl -sf "http://127.0.0.1:8002/health" && echo " client OK"
