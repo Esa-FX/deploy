@@ -5,6 +5,16 @@ x-rds-ca-volume: &rds-ca-volume
   - /opt/esafx/global-bundle.pem:/opt/esafx/global-bundle.pem:ro
 
 services:
+  otel-collector:
+    image: public.ecr.aws/aws-observability/aws-otel-collector:v0.43.1
+    container_name: esafx-otel-collector
+    restart: unless-stopped
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    environment:
+      AWS_REGION: ap-southeast-3
+
   crm-api:
     image: ${CRM_IMAGE:-esafx-crm:latest}
     build:
@@ -12,6 +22,8 @@ services:
       dockerfile: Dockerfile
     container_name: esafx-crm-api
     restart: unless-stopped
+    depends_on:
+      - otel-collector
     ports:
       - "8001:8000"
     env_file:
