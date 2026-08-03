@@ -14,10 +14,8 @@
       "git reset --hard origin/main",
       "git log -1 --oneline",
       ".\\deploy\\sync-env-from-secrets.ps1 -SecretId esafx/staging/db/trading -InstallAwsCli",
-      "if (Test-Path .env.staging) {",
-      "  if (-not (Select-String -Path .env.staging -Pattern '^ACCSUM_MIDNIGHT_ENABLED=' -Quiet)) { Add-Content .env.staging 'ACCSUM_MIDNIGHT_ENABLED=true' }",
-      "  if (-not (Select-String -Path .env.staging -Pattern '^FLEET_DISCOVER_ON_START=' -Quiet)) { Add-Content .env.staging 'FLEET_DISCOVER_ON_START=false' }",
-      "}",
+      "if (-not (Select-String -Path .env.staging -Pattern '^ACCSUM_MIDNIGHT_ENABLED=' -Quiet)) { [System.IO.File]::AppendAllText((Resolve-Path .env.staging), \"`nACCSUM_MIDNIGHT_ENABLED=true`n\") }",
+      "if (-not (Select-String -Path .env.staging -Pattern '^FLEET_DISCOVER_ON_START=' -Quiet)) { [System.IO.File]::AppendAllText((Resolve-Path .env.staging), \"FLEET_DISCOVER_ON_START=false`n\") }",
       ".\\deploy\\ec2-deploy.ps1",
       "(Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:8003/health').Content",
       "git remote set-url origin https://github.com/Esa-FX/mt-bridge-service.git"
