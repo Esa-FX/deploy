@@ -1,0 +1,28 @@
+{
+  "DocumentName": "AWS-RunShellScript",
+  "InstanceIds": ["i-06e3745274ed0fac4"],
+  "TimeoutSeconds": 2400,
+  "Parameters": {
+    "commands": [
+      "set -euxo pipefail",
+      "cd /opt/esafx",
+      "REGION=ap-southeast-3",
+      "GITHUB_TOKEN=$(aws secretsmanager get-secret-value --secret-id esafx/staging/github-clone --region $REGION --query SecretString --output text)",
+      "git_pull() { local name=$1 branch=$2; local url=\"https://x-access-token:${GITHUB_TOKEN}@github.com/Esa-FX/${name}.git\"; if [ ! -d \"$name/.git\" ]; then git clone --branch \"$branch\" --single-branch \"$url\" \"$name\"; git -C \"$name\" remote set-url origin \"https://github.com/Esa-FX/${name}.git\"; git -C \"$name\" log -1 --oneline; return; fi; git -C \"$name\" remote set-url origin \"$url\"; git -C \"$name\" fetch origin \"$branch\"; git -C \"$name\" checkout \"$branch\"; git -C \"$name\" reset --hard \"origin/$branch\"; git -C \"$name\" remote set-url origin \"https://github.com/Esa-FX/${name}.git\"; git -C \"$name\" log -1 --oneline; }",
+      "git_pull deploy main",
+      "git_pull backoffice-service staging",
+      "chmod +x deploy/staging/*.sh",
+      "./deploy/staging/sync-crm-trading-db-env.sh",
+      "COMPOSE_FILE=/opt/esafx/deploy/staging/docker-compose.app.yml",
+      "if [ ! -f backoffice-service/.env.staging ]; then cp backoffice-service/.env.staging.example backoffice-service/.env.staging; fi",
+      "PASS=$(cat /opt/esafx/secrets/trading_db_password 2>/dev/null || true)",
+      "if [ -n \"$PASS\" ]; then grep -q '^TRADING_DB_PASSWORD_FILE=' backoffice-service/.env.staging || echo 'TRADING_DB_PASSWORD_FILE=/run/secrets/trading_db_password' >> backoffice-service/.env.staging; fi",
+      "docker compose -f \"$COMPOSE_FILE\" build backoffice",
+      "docker compose -f \"$COMPOSE_FILE\" up -d --no-deps --force-recreate backoffice",
+      "for i in 1 2 3 4 5 6 7 8 9 10 11 12; do curl -sf http://127.0.0.1:${BACKOFFICE_PORT:-8008}/health && break || sleep 5; done",
+      "curl -s http://127.0.0.1:${BACKOFFICE_PORT:-8008}/health",
+      "git -C backoffice-service log -1 --oneline",
+      "unset GITHUB_TOKEN"
+    ]
+  }
+}

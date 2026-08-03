@@ -186,6 +186,28 @@ services:
       retries: 3
       start_period: 40s
 
+  # AccSum / settlement API — host 8008 (WhatsApp owns 8007)
+  backoffice:
+    image: ${BACKOFFICE_IMAGE:-esafx-backoffice:latest}
+    build:
+      context: ../../backoffice-service
+      dockerfile: Dockerfile
+    container_name: esafx-backoffice
+    restart: unless-stopped
+    ports:
+      - "${BACKOFFICE_PORT:-8008}:8000"
+    env_file:
+      - ../../backoffice-service/.env.staging
+    volumes:
+      - /opt/esafx/global-bundle.pem:/opt/esafx/global-bundle.pem:ro
+      - /opt/esafx/secrets/trading_db_password:/run/secrets/trading_db_password:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
   identity-migrate:
     image: ${IDENTITY_IMAGE:-esafx-identity:latest}
     build:
