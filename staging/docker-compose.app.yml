@@ -200,7 +200,7 @@ services:
       - ../../backoffice-service/.env.staging
     volumes:
       - /opt/esafx/global-bundle.pem:/opt/esafx/global-bundle.pem:ro
-      - /opt/esafx/secrets/trading_db_password:/run/secrets/trading_db_password:ro
+      - /opt/esafx/secrets/trading_db_password_prod_readonly:/run/secrets/trading_db_password_prod_readonly:ro
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
