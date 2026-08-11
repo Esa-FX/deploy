@@ -15,9 +15,6 @@ services:
       - "8006:8006"
     env_file:
       - ../../voip-gateway-service/.env.production
-    environment:
-      # Safety net behind SLA watchdog; keep False in non-prod unless testing.
-      RECORDING_BATCH_ENABLED: "true"
     volumes: *rds-ca-volume
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8006/health"]
