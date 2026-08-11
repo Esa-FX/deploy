@@ -119,6 +119,9 @@ Write-Host "==> Sync TRADING_DB_* from $TradingSecretId"
 Write-Host "==> Sync MT5 credentials from Secrets Manager (if configured)"
 & (Join-Path $InstallRoot "deploy\sync-mt5-from-secrets.ps1") -SecretId "esafx/production/mt5-manager" -Region $Region -InstallAwsCli -ErrorAction SilentlyContinue
 
+Write-Host "==> Sync MT4 credentials from Secrets Manager (if configured)"
+& (Join-Path $InstallRoot "deploy\sync-mt4-from-secrets.ps1") -Region $Region -InstallAwsCli -ErrorAction SilentlyContinue
+
 # Production runtime settings
 $redisHost = "esafx-production-redis.jwmnjk.0001.apse3.cache.amazonaws.com"
 $lines = Get-Content $envFile | Where-Object {

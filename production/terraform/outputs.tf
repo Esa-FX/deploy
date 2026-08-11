@@ -39,6 +39,11 @@ output "mt_ec2_private_ip" {
   value = aws_instance.mt.private_ip
 }
 
+output "mt_elastic_ip" {
+  description = "Stable public IP for dealing / MT Manager API whitelist (mt-bridge outbound source)"
+  value       = aws_eip.mt.public_ip
+}
+
 output "rds_core_endpoint" {
   value = aws_db_instance.core.address
 }
@@ -137,6 +142,14 @@ output "secret_service_tokens_arn" {
 
 output "secret_mt5_manager_arn" {
   value = aws_secretsmanager_secret.mt5_manager.arn
+}
+
+output "secret_mt4_regular_manager_arn" {
+  value = aws_secretsmanager_secret.mt4_regular_manager.arn
+}
+
+output "secret_mt4_mini_manager_arn" {
+  value = aws_secretsmanager_secret.mt4_mini_manager.arn
 }
 
 output "secret_audit_api_key_arn" {
