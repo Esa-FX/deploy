@@ -81,6 +81,40 @@ resource "aws_secretsmanager_secret_version" "mt5_manager" {
   }
 }
 
+resource "aws_secretsmanager_secret" "mt4_regular_manager" {
+  name = "${var.project}/${var.environment}/mt4-regular-manager"
+  tags = local.common_tags
+}
+
+resource "aws_secretsmanager_secret_version" "mt4_regular_manager" {
+  secret_id = aws_secretsmanager_secret.mt4_regular_manager.id
+  secret_string = jsonencode({
+    host  = "placeholder-mt4-host:443"
+    read  = [{ login = 0, password = "placeholder", label = "read-1" }]
+    write = [{ login = 0, password = "placeholder", label = "write-1" }]
+  })
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
+}
+
+resource "aws_secretsmanager_secret" "mt4_mini_manager" {
+  name = "${var.project}/${var.environment}/mt4-mini-manager"
+  tags = local.common_tags
+}
+
+resource "aws_secretsmanager_secret_version" "mt4_mini_manager" {
+  secret_id = aws_secretsmanager_secret.mt4_mini_manager.id
+  secret_string = jsonencode({
+    host  = "placeholder-mt4-host:443"
+    read  = [{ login = 0, password = "placeholder", label = "read-1" }]
+    write = [{ login = 0, password = "placeholder", label = "write-1" }]
+  })
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
+}
+
 resource "aws_secretsmanager_secret" "service_tokens" {
   name = "${var.project}/${var.environment}/service-tokens"
   tags = local.common_tags
