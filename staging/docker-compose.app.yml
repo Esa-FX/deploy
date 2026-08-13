@@ -103,7 +103,9 @@ services:
       - "8006:8006"
     env_file:
       - ../../voip-gateway-service/.env.staging
-    volumes: *rds-ca-volume
+    volumes:
+      - /opt/esafx/global-bundle.pem:/opt/esafx/global-bundle.pem:ro
+      - /opt/esafx/data/voip-cdr:/app/data/cdr
     depends_on:
       pii-vault:
         condition: service_healthy

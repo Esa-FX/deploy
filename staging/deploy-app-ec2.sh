@@ -15,6 +15,9 @@ if [[ ! -f "$CA_BUNDLE" ]]; then
   sudo chmod 644 "$CA_BUNDLE"
 fi
 
+sudo mkdir -p /opt/esafx/data/voip-cdr
+sudo chmod 777 /opt/esafx/data/voip-cdr
+
 require_env() {
   local f="$1"
   if [[ ! -f "$f" ]]; then

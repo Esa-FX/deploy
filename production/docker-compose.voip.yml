@@ -1,7 +1,6 @@
 # Production VoIP tier — single voip-gateway on voip EC2 (Elastic IP for vendor whitelist).
-
-x-rds-ca-volume: &rds-ca-volume
-  - /opt/esafx/global-bundle.pem:/opt/esafx/global-bundle.pem:ro
+# Host dir /opt/esafx/data/voip-cdr holds CDR import/sweep byte cursors across recreates
+# (deploy-voip-ec2.sh mkdir + chmod 777).
 
 services:
   voip-gateway:
@@ -15,7 +14,9 @@ services:
       - "8006:8006"
     env_file:
       - ../../voip-gateway-service/.env.production
-    volumes: *rds-ca-volume
+    volumes:
+      - /opt/esafx/global-bundle.pem:/opt/esafx/global-bundle.pem:ro
+      - /opt/esafx/data/voip-cdr:/app/data/cdr
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8006/health"]
       interval: 30s
