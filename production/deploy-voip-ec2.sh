@@ -23,6 +23,9 @@ if [[ ! -f "$CA_BUNDLE" ]]; then
   sudo chmod 644 "$CA_BUNDLE"
 fi
 
+sudo mkdir -p /opt/esafx/data/voip-cdr
+sudo chmod 777 /opt/esafx/data/voip-cdr
+
 docker compose -f "$COMPOSE_FILE" build voip-gateway
 docker compose -f "$COMPOSE_FILE" up -d voip-gateway
 
