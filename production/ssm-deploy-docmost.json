@@ -5,7 +5,7 @@
   "InstanceIds": ["REPLACE_WITH_DOCMOST_INSTANCE_ID"],
   "Parameters": {
     "commands": [
-      "set -euxo pipefail",
+      "set -euo pipefail",
       "cd /opt/esafx",
       "REGION=ap-southeast-3",
       "GITHUB_TOKEN=$(aws secretsmanager get-secret-value --secret-id esafx/production/github-clone --region $REGION --query SecretString --output text)",

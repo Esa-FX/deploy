@@ -49,7 +49,7 @@ write_env() {
 APP_URL=https://wiki.esandardev.com
 APP_SECRET=${app_secret}
 POSTGRES_PASSWORD=${db_password}
-DOCMOST_IMAGE=docmost/docmost:v0.95.0
+DOCMOST_IMAGE=docmost/docmost:0.95.0
 EOF
 }
 
