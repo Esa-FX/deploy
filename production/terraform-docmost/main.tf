@@ -275,7 +275,8 @@ resource "aws_instance" "docmost" {
   iam_instance_profile   = aws_iam_instance_profile.ec2.name
 
   root_block_device {
-    volume_size = 20
+    # AL2023 AMI snapshot is 30 GiB; EC2 rejects a smaller root volume.
+    volume_size = 30
     volume_type = "gp3"
   }
 
