@@ -1,0 +1,12 @@
+[Unit]
+Description=Esa-FX Docmost markdown sync (git → wiki)
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Environment=AWS_REGION=ap-southeast-3
+Environment=ESAFX_ROOT=/opt/esafx
+ExecStart=/usr/bin/bash /opt/esafx/deploy/docmost/sync/run.sh
+Nice=10

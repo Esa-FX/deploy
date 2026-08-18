@@ -1,0 +1,58 @@
+# Official Docmost stack (app + Postgres + Redis). Pin image; do not fork.
+# Run from this directory: docker compose --env-file .env up -d
+
+services:
+  docmost:
+    image: ${DOCMOST_IMAGE:-docmost/docmost:v0.95.0}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      APP_URL: ${APP_URL}
+      APP_SECRET: ${APP_SECRET}
+      DATABASE_URL: postgresql://docmost:${POSTGRES_PASSWORD}@db:5432/docmost
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    mem_limit: 768m
+    volumes:
+      - docmost:/app/data/storage
+
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: docmost
+      POSTGRES_USER: docmost
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    restart: unless-stopped
+    mem_limit: 512m
+    volumes:
+      - db_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U docmost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:8
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    restart: unless-stopped
+    mem_limit: 128m
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  docmost:
+  db_data:
+  redis_data:
