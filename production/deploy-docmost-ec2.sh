@@ -67,5 +67,13 @@ cd "$COMPOSE_DIR"
 docker compose pull
 docker compose up -d
 install_timer
-sleep 8
-curl -sf "http://127.0.0.1:3000/api/health" && echo docmost-health-ok
+# First boot / image pull: app can take >8s after compose up.
+for _ in $(seq 1 30); do
+  if curl -sf "http://127.0.0.1:3000/api/health"; then
+    echo docmost-health-ok
+    exit 0
+  fi
+  sleep 2
+done
+echo "docmost health timeout" >&2
+exit 1
