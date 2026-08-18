@@ -3,7 +3,7 @@
 
 services:
   docmost:
-    image: ${DOCMOST_IMAGE:-docmost/docmost:v0.95.0}
+    image: ${DOCMOST_IMAGE:-docmost/docmost:0.95.0}
     depends_on:
       db:
         condition: service_healthy
