@@ -188,7 +188,8 @@ class Docmost:
         return json.loads(raw.decode("utf-8"))
 
     def list_spaces(self) -> list[dict]:
-        payload = _unwrap(self._json("POST", "/api/spaces/list", {"limit": 100}))
+        # v0.95 SpaceController is POST /spaces/ not /spaces/list.
+        payload = _unwrap(self._json("POST", "/api/spaces/", {"limit": 100}))
         if isinstance(payload, dict):
             items = payload.get("items") or payload.get("spaces") or []
             return list(items)
@@ -211,64 +212,23 @@ class Docmost:
             raise RuntimeError(f"space create failed for {slug}: {created!r}")
         return str(created["id"])
 
-    def create_page(self, space_id: str, title: str, parent_page_id: str | None = None) -> str:
+    def create_page(
+        self,
+        space_id: str,
+        title: str,
+        parent_page_id: str | None = None,
+        markdown: str | None = None,
+    ) -> str:
         body: dict = {"title": title, "spaceId": space_id}
         if parent_page_id:
             body["parentPageId"] = parent_page_id
+        if markdown:
+            body["content"] = markdown
+            body["format"] = "markdown"
         created = _unwrap(self._json("POST", "/api/pages/create", body))
         if not isinstance(created, dict) or "id" not in created:
             raise RuntimeError(f"create page {title!r} failed: {created!r}")
         return str(created["id"])
-
-    def import_page(
-        self,
-        space_id: str,
-        filename: str,
-        markdown: str,
-        parent_page_id: str | None = None,
-    ) -> str:
-        boundary = "----esafxdocmost"
-        filename = filename if filename.endswith(".md") else filename + ".md"
-        chunks: list[bytes] = [
-            (
-                f"--{boundary}\r\nContent-Disposition: form-data; name=\"spaceId\"\r\n\r\n"
-                f"{space_id}\r\n"
-            ).encode("utf-8")
-        ]
-        if parent_page_id:
-            chunks.append(
-                (
-                    f"--{boundary}\r\nContent-Disposition: form-data; name=\"parentPageId\"\r\n\r\n"
-                    f"{parent_page_id}\r\n"
-                ).encode("utf-8")
-            )
-        chunks.append(
-            (
-                f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; "
-                f"filename=\"{filename}\"\r\nContent-Type: text/markdown\r\n\r\n"
-            ).encode("utf-8")
-        )
-        chunks.append(markdown.encode("utf-8"))
-        chunks.append(f"\r\n--{boundary}--\r\n".encode("utf-8"))
-        req = urllib.request.Request(
-            self.base + "/api/pages/import",
-            data=b"".join(chunks),
-            method="POST",
-            headers={
-                "Content-Type": f"multipart/form-data; boundary={boundary}",
-                "Accept": "application/json",
-            },
-        )
-        try:
-            with self.opener.open(req, timeout=60) as resp:
-                payload = json.loads(resp.read().decode("utf-8"))
-        except urllib.error.HTTPError as exc:
-            detail = exc.read().decode("utf-8", "replace")
-            raise RuntimeError(f"import {filename} → {exc.code}: {detail[:500]}") from exc
-        page = _unwrap(payload)
-        if not isinstance(page, dict) or "id" not in page:
-            raise RuntimeError(f"import {filename} missing id: {payload!r}")
-        return str(page["id"])
 
     def update_page(self, page_id: str, title: str, markdown: str) -> None:
         self._json(
@@ -337,7 +297,7 @@ def upsert_markdown(
     if page_id:
         client.update_page(str(page_id), title, markdown)
     else:
-        page_id = client.import_page(space_id, filename, f"# {title}\n\n{markdown}", parent_id)
+        page_id = client.create_page(space_id, title, parent_id, markdown)
     pages[key] = {"id": page_id, "digest": digest}
 
 
