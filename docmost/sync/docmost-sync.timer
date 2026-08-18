@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily Docmost git sync at midnight Asia/Jakarta (17:00 UTC)
+
+[Timer]
+# 00:00 WIB = 17:00 UTC (no DST)
+OnCalendar=*-*-* 17:00:00 UTC
+Persistent=true
+RandomizedDelaySec=120
+
+[Install]
+WantedBy=timers.target

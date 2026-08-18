@@ -1,0 +1,20 @@
+{
+  "DocumentName": "AWS-RunShellScript",
+  "TimeoutSeconds": 1200,
+  "Comment": "Replace InstanceIds after terraform-docmost apply (tag Name=esafx-production-docmost).",
+  "InstanceIds": ["REPLACE_WITH_DOCMOST_INSTANCE_ID"],
+  "Parameters": {
+    "commands": [
+      "set -euxo pipefail",
+      "cd /opt/esafx",
+      "REGION=ap-southeast-3",
+      "GITHUB_TOKEN=$(aws secretsmanager get-secret-value --secret-id esafx/production/github-clone --region $REGION --query SecretString --output text)",
+      "url=\"https://x-access-token:${GITHUB_TOKEN}@github.com/Esa-FX/deploy.git\"",
+      "if [[ -d deploy/.git ]]; then git -C deploy remote set-url origin \"$url\"; git -C deploy fetch origin main; git -C deploy checkout main; git -C deploy reset --hard origin/main; else git clone --branch main --depth 1 \"$url\" deploy; fi",
+      "git -C deploy remote set-url origin https://github.com/Esa-FX/deploy.git",
+      "unset GITHUB_TOKEN",
+      "export ESAFX_ROOT=/opt/esafx AWS_REGION=ap-southeast-3 ESAFX_BRANCH=main",
+      "bash /opt/esafx/deploy/production/deploy-docmost-ec2.sh"
+    ]
+  }
+}

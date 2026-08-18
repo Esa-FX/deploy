@@ -1,0 +1,22 @@
+# One-way git → Docmost. Always fetch main + staging. Cadence: daily 00:00 Asia/Jakarta.
+org: Esa-FX
+branches:
+  - main
+  - staging
+globs:
+  - docs/**/*.md
+  - README.md
+repos:
+  - crm
+  - crm-service
+  - client
+  - client-service
+  - identity-service
+  - pii-vault-service
+  - audit-log-service
+  - voip-gateway-service
+  - whatsapp-gateway-service
+  - mt-bridge-service
+  - backoffice
+  - backoffice-service
+  - deploy
