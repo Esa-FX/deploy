@@ -15,15 +15,12 @@ mkdir -p "$SRC" "$(dirname "$STATE")"
 GITHUB_TOKEN="$(aws secretsmanager get-secret-value --secret-id "$CLONE_SECRET" --region "$REGION" --query SecretString --output text)"
 export BOT_JSON
 BOT_JSON="$(aws secretsmanager get-secret-value --secret-id "$SECRET_ID" --region "$REGION" --query SecretString --output text)"
-eval "$(python3 - <<'PY'
-import json, os, shlex
-cfg = json.loads(os.environ["BOT_JSON"])
-url = cfg.get("url") or "https://wiki.esandardev.com"
-print("export DOCMOST_URL=" + shlex.quote(url))
-print("export DOCMOST_EMAIL=" + shlex.quote(cfg["email"]))
-print("export DOCMOST_PASSWORD=" + shlex.quote(cfg["password"]))
-PY
-)"
+# Do not eval a heredoc inside double quotes — bash treats " in the Python as
+# closing the outer quote (unexpected EOF at end of file).
+export DOCMOST_URL DOCMOST_EMAIL DOCMOST_PASSWORD
+DOCMOST_URL="$(python3 -c 'import json,os; print(json.loads(os.environ["BOT_JSON"]).get("url") or "https://wiki.esandardev.com")')"
+DOCMOST_EMAIL="$(python3 -c 'import json,os; print(json.loads(os.environ["BOT_JSON"])["email"])')"
+DOCMOST_PASSWORD="$(python3 -c 'import json,os; print(json.loads(os.environ["BOT_JSON"])["password"])')"
 
 clone_or_fetch() {
   local name="$1"
@@ -50,14 +47,9 @@ clone_or_fetch() {
   fi
 }
 
-mapfile -t REPOS < <(python3 - <<PY
-from pathlib import Path
-import sys
-sys.path.insert(0, "${ROOT}/deploy/docmost/sync")
-from sync_docs import load_repos_yml
-print("\\n".join(load_repos_yml(Path("${CONFIG}")).get("repos") or []))
-PY
-)"
+export DOCMOST_CONFIG="$CONFIG"
+export DOCMOST_SYNC_DIR="$ROOT/deploy/docmost/sync"
+mapfile -t REPOS < <(python3 -c 'import os,sys; from pathlib import Path; sys.path.insert(0, os.environ["DOCMOST_SYNC_DIR"]); from sync_docs import load_repos_yml; print("\n".join(load_repos_yml(Path(os.environ["DOCMOST_CONFIG"])).get("repos") or []))')
 
 for repo in "${REPOS[@]}"; do
   echo "==> fetch $repo main+staging"
