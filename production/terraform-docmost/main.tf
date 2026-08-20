@@ -38,11 +38,6 @@ variable "wiki_hostname" {
   default = "wiki.esandardev.com"
 }
 
-variable "graph_hostname" {
-  type    = string
-  default = "graph.esandardev.com"
-}
-
 variable "domain_name" {
   type    = string
   default = "esandardev.com"
@@ -357,7 +352,7 @@ resource "aws_lb_listener_rule" "wiki" {
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.docmost.arn
+    target_group_arn = aws_lb_target_group.wiki_graph.arn
   }
 
   condition {
@@ -402,34 +397,6 @@ resource "aws_lb_target_group_attachment" "wiki_graph" {
   port             = 8080
 }
 
-resource "aws_lb_listener_rule" "wiki_graph" {
-  listener_arn = data.aws_lb_listener.https.arn
-  priority     = 4
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.wiki_graph.arn
-  }
-
-  condition {
-    host_header {
-      values = [var.graph_hostname]
-    }
-  }
-}
-
-resource "aws_route53_record" "wiki_graph" {
-  zone_id = data.aws_route53_zone.main.zone_id
-  name    = var.graph_hostname
-  type    = "A"
-
-  alias {
-    name                   = data.aws_lb.api.dns_name
-    zone_id                = data.aws_lb.api.zone_id
-    evaluate_target_health = true
-  }
-}
-
 output "instance_id" {
   value = aws_instance.docmost.id
 }
@@ -440,10 +407,6 @@ output "private_ip" {
 
 output "wiki_url" {
   value = "https://${var.wiki_hostname}"
-}
-
-output "graph_url" {
-  value = "https://${var.graph_hostname}"
 }
 
 output "bot_secret_name" {
