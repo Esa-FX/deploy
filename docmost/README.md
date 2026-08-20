@@ -2,7 +2,8 @@
 
 Self-hosted [Docmost](https://github.com/docmost/docmost) Community. Official image only — no fork, no custom HTTP server.
 
-**URL:** `https://wiki.esandardev.com`
+**URL:** `https://wiki.esandardev.com` (Docmost)
+**Graph:** `https://graph.esandardev.com` (hover map; nginx on the same EC2)
 
 **Infra is production** (prod VPC, prod ALB, `esafx/production/docmost/*`, `esafx/production/github-clone`). Dedicated `t3.small`.
 
@@ -24,10 +25,10 @@ Do **not** put passwords in git.
 
 ## Sync
 
-- Fetch **main** and **staging** for every repo in `repos.yml`
-- `docs/**/*.md` + root `README.md`
-- Per-repo Coverage table + copies under `staging/` and `main/`
-- Space `Esa-FX coverage` rolls up counts
+- Fetch **main** and **staging** for `Esa-FX/wiki` only (`repos.yml`)
+- `content/**/*.md` + root `README.md`
+- Coverage table + copies under `staging/` and `main/`
+- Interactive hover graph: `https://graph.esandardev.com` (static files from `Esa-FX/wiki`, nginx :8080)
 - Daily **00:00 Asia/Jakarta**
 
 ## Ship order

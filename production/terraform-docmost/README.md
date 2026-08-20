@@ -1,6 +1,7 @@
 # Production Docmost EC2 + ALB host rule
 
-Dedicated wiki is **production**: `https://wiki.esandardev.com` → `esafx-production-api-alb` host rule → this EC2.
+Dedicated wiki is **production**: `https://wiki.esandardev.com` → Docmost.
+Hover graph: `https://graph.esandardev.com` → nginx :8080 on the same EC2.
 
 Content still compares **staging vs main** git branches (coverage flags). Infra is not a staging stack.
 

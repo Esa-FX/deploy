@@ -1,22 +1,12 @@
 # One-way git → Docmost. Always fetch main + staging. Cadence: daily 00:00 Asia/Jakarta.
+#
+# Staff docs live in Esa-FX/wiki only. Service repos must not grow docs/.
 org: Esa-FX
 branches:
   - main
   - staging
 globs:
-  - docs/**/*.md
+  - content/**/*.md
   - README.md
 repos:
-  - crm
-  - crm-service
-  - client
-  - client-service
-  - identity-service
-  - pii-vault-service
-  - audit-log-service
-  - voip-gateway-service
-  - whatsapp-gateway-service
-  - mt-bridge-service
-  - backoffice
-  - backoffice-service
-  - deploy
+  - wiki
