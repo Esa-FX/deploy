@@ -28,7 +28,7 @@ def glob_ok(rel: str) -> bool:
     parts = posix.parts
     if posix.name.upper() == "README.MD" and len(parts) == 1:
         return True
-    if len(parts) >= 2 and parts[0] == "docs" and posix.suffix.lower() == ".md":
+    if len(parts) >= 2 and parts[0] in ("content", "docs") and posix.suffix.lower() == ".md":
         return True
     return False
 
