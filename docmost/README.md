@@ -28,7 +28,7 @@ Do **not** put passwords in git.
 - Fetch **main** and **staging** for `Esa-FX/wiki` only (`repos.yml`)
 - `content/**/*.md` + root `README.md`
 - Coverage table + copies under `staging/` and `main/`
-- Interactive hover graph: `https://wiki.esandardev.com` (static files from `Esa-FX/wiki`, nginx :8080, backoffice Cognito admin)
+- Interactive hover graph: `https://wiki.esandardev.com` (static files from `Esa-FX/wiki`, nginx :8080, CRM prod Cognito, role `admin`)
 - Daily **00:00 Asia/Jakarta**
 
 ## Ship order
@@ -36,4 +36,4 @@ Do **not** put passwords in git.
 1. Merge this `deploy` change to **`main`**.
 2. `cd deploy/production/terraform-docmost && terraform init && terraform apply`
 3. `bash deploy/production/ssm-send-wiki-graph.sh`
-4. Open `https://wiki.esandardev.com` → backoffice Cognito (`admin` / `superadmin`).
+4. Open `https://wiki.esandardev.com` → CRM prod Cognito (`custom:role=admin`).
