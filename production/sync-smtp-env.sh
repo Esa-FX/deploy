@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 # Sync SMTP credentials from Secrets Manager into crm-service .env file.
-# Create secret esafx/{staging|production}/smtp JSON: host, port, user, password, from, ftd_notify_to, enabled
+# Create secret esafx/{staging|production}/smtp JSON:
+#   host, port, user, password, from, ftd_notify_to, enabled
+#   optional fallback_host, fallback_port, fallback_user, fallback_password, fallback_from
 #
 #   aws secretsmanager create-secret --name esafx/production/smtp --secret-string '{
 #     "enabled": "true", "host": "smtp.gmail.com", "port": "587",
-#     "user": "...", "password": "...", "from": "...", "ftd_notify_to": "..."
+#     "user": "...", "password": "...", "from": "...", "ftd_notify_to": "...",
+#     "fallback_host": "smtp.zoho.com.au", "fallback_port": "587",
+#     "fallback_user": "...", "fallback_password": "...", "fallback_from": "..."
 #   }'
 #
 # Usage: ./deploy/production/sync-smtp-env.sh
@@ -43,6 +47,11 @@ USER="$(json_field "$RAW" user)"
 PASS="$(json_field "$RAW" password)"
 FROM="$(json_field "$RAW" from)"
 FTD_TO="$(json_field "$RAW" ftd_notify_to)"
+FB_HOST="$(json_field "$RAW" fallback_host)"
+FB_PORT="$(json_field "$RAW" fallback_port)"
+FB_USER="$(json_field "$RAW" fallback_user)"
+FB_PASS="$(json_field "$RAW" fallback_password)"
+FB_FROM="$(json_field "$RAW" fallback_from)"
 
 compose_escape() {
   printf '%s' "$1" | sed 's/\$/$$/g'
@@ -65,6 +74,11 @@ set_env_var() {
 [[ -n "$PASS" ]] && set_env_var "$CRM_ENV" SMTP_PASSWORD "$PASS"
 [[ -n "$FROM" ]] && set_env_var "$CRM_ENV" SMTP_FROM "$FROM"
 [[ -n "$FTD_TO" ]] && set_env_var "$CRM_ENV" FTD_NOTIFY_TO "$FTD_TO"
+[[ -n "$FB_HOST" ]] && set_env_var "$CRM_ENV" SMTP_FALLBACK_HOST "$FB_HOST"
+[[ -n "$FB_PORT" ]] && set_env_var "$CRM_ENV" SMTP_FALLBACK_PORT "$FB_PORT"
+[[ -n "$FB_USER" ]] && set_env_var "$CRM_ENV" SMTP_FALLBACK_USER "$FB_USER"
+[[ -n "$FB_PASS" ]] && set_env_var "$CRM_ENV" SMTP_FALLBACK_PASSWORD "$FB_PASS"
+[[ -n "$FB_FROM" ]] && set_env_var "$CRM_ENV" SMTP_FALLBACK_FROM "$FB_FROM"
 
 echo "Synced SMTP from $SECRET_ID into $CRM_ENV"
 echo "Recreate: docker compose -f deploy/production/docker-compose.crm.yml up -d --force-recreate crm-api"

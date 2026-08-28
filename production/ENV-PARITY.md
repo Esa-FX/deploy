@@ -7,7 +7,7 @@ Production should behave like staging with **only infrastructure identifiers cha
 | Area | Variables / settings |
 |------|---------------------|
 | VoIP PBX | `VOIP_PROVIDER=asterisk-ami`, all `AMI_*`, all `SFTP_*` |
-| SMTP | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `FTD_NOTIFY_TO` |
+| SMTP | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_FALLBACK_*`, `FTD_NOTIFY_TO` |
 | Issabel style | `AMI_ORIGINATE_STYLE=issabel`, `AMI_CHANNEL_TECH=SIP`, `AMI_LEAD_PHONE_FORMAT=id_local` |
 | Recording fetch | `AMI_RECORDING_FETCH=sftp-glob`, `AMI_RECORDING_PATH`, timezone `Asia/Jakarta` |
 
