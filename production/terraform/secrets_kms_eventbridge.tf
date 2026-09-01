@@ -148,11 +148,25 @@ resource "aws_cloudwatch_event_bus" "audit" {
   tags = local.common_tags
 }
 
+resource "aws_sqs_queue" "audit_dlq" {
+  name                      = "${local.name_prefix}-audit-ingest-dlq"
+  message_retention_seconds = 1209600
+  kms_master_key_id         = aws_kms_key.main.arn
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-audit-ingest-dlq"
+  })
+}
+
 resource "aws_sqs_queue" "audit" {
   name                       = "${local.name_prefix}-audit-ingest"
   message_retention_seconds  = 1209600
   visibility_timeout_seconds = 60
   kms_master_key_id          = aws_kms_key.main.arn
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.audit_dlq.arn
+    maxReceiveCount     = 5
+  })
 
   tags = local.common_tags
 }
@@ -196,9 +210,12 @@ resource "aws_iam_role_policy" "audit_sqs_core" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes", "sqs:ChangeMessageVisibility"]
-        Resource = aws_sqs_queue.audit.arn
+        Effect = "Allow"
+        Action = ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes", "sqs:ChangeMessageVisibility"]
+        Resource = [
+          aws_sqs_queue.audit.arn,
+          aws_sqs_queue.audit_dlq.arn,
+        ]
       },
     ]
   })
