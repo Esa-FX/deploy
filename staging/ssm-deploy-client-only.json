@@ -1,0 +1,22 @@
+{
+  "DocumentName": "AWS-RunShellScript",
+  "InstanceIds": ["i-06e3745274ed0fac4"],
+  "TimeoutSeconds": 1800,
+  "Parameters": {
+    "commands": [
+      "set -euxo pipefail",
+      "cd /opt/esafx",
+      "REGION=ap-southeast-3",
+      "GITHUB_TOKEN=$(aws secretsmanager get-secret-value --secret-id esafx/staging/github-clone --region $REGION --query SecretString --output text)",
+      "git_pull() { local name=$1 branch=$2; local url=\"https://x-access-token:${GITHUB_TOKEN}@github.com/Esa-FX/${name}.git\"; git -C \"$name\" remote set-url origin \"$url\"; git -C \"$name\" fetch origin \"$branch\"; git -C \"$name\" checkout \"$branch\"; git -C \"$name\" reset --hard \"origin/$branch\"; git -C \"$name\" remote set-url origin \"https://github.com/Esa-FX/${name}.git\"; git -C \"$name\" log -1 --oneline; }",
+      "git_pull deploy main",
+      "git_pull client-service staging",
+      "docker compose -f deploy/staging/docker-compose.app.yml build client",
+      "docker compose -f deploy/staging/docker-compose.app.yml up -d --force-recreate client",
+      "sleep 20",
+      "curl -sf http://127.0.0.1:8002/health && echo staging-client-ok",
+      "git -C client-service log -1 --oneline",
+      "unset GITHUB_TOKEN"
+    ]
+  }
+}
