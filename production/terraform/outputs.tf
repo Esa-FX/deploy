@@ -39,11 +39,6 @@ output "mt_ec2_private_ip" {
   value = aws_instance.mt.private_ip
 }
 
-output "mt_elastic_ip" {
-  description = "Stable public IP for dealing / MT Manager API whitelist (mt-bridge outbound source)"
-  value       = aws_eip.mt.public_ip
-}
-
 output "rds_core_endpoint" {
   value = aws_db_instance.core.address
 }
@@ -114,6 +109,14 @@ output "audit_event_bus_name" {
 
 output "audit_sqs_queue_url" {
   value = aws_sqs_queue.audit.url
+}
+
+output "audit_sqs_dlq_url" {
+  value = aws_sqs_queue.audit_dlq.url
+}
+
+output "ops_sns_topic_arn" {
+  value = aws_sns_topic.ops.arn
 }
 
 output "kms_key_arn" {

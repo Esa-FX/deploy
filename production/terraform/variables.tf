@@ -138,3 +138,9 @@ variable "db_master_username" {
   type    = string
   default = "dbadmin"
 }
+
+variable "ops_alert_emails" {
+  description = "SNS email subscribers for CloudWatch alarms. Empty = topic exists, no mail until set."
+  type        = list(string)
+  default     = []
+}
