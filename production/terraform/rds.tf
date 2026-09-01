@@ -52,6 +52,10 @@ resource "aws_db_instance" "core" {
   parameter_group_name = "default.postgres16"
   apply_immediately    = false
 
+  lifecycle {
+    ignore_changes = [engine_version, instance_class]
+  }
+
   tags = merge(local.common_tags, {
     Name = "${local.name_prefix}-core"
   })
@@ -85,6 +89,10 @@ resource "aws_db_instance" "trading" {
 
   parameter_group_name = "default.postgres16"
   apply_immediately    = false
+
+  lifecycle {
+    ignore_changes = [engine_version, instance_class]
+  }
 
   tags = merge(local.common_tags, {
     Name = "${local.name_prefix}-trading"

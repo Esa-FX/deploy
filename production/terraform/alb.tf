@@ -15,10 +15,11 @@ resource "aws_lb_target_group" "identity" {
   vpc_id   = aws_vpc.main.id
 
   health_check {
-    path                = "/health"
+    path                = "/ready"
     healthy_threshold   = 2
     unhealthy_threshold = 3
     interval            = 30
+    matcher             = "200"
   }
 
   tags = local.common_tags
@@ -31,10 +32,11 @@ resource "aws_lb_target_group" "crm_api" {
   vpc_id   = aws_vpc.main.id
 
   health_check {
-    path                = "/health"
+    path                = "/ready"
     healthy_threshold   = 2
     unhealthy_threshold = 3
     interval            = 30
+    matcher             = "200"
   }
 
   tags = local.common_tags
@@ -47,10 +49,11 @@ resource "aws_lb_target_group" "client" {
   vpc_id   = aws_vpc.main.id
 
   health_check {
-    path                = "/health"
+    path                = "/ready"
     healthy_threshold   = 2
     unhealthy_threshold = 3
     interval            = 30
+    matcher             = "200"
   }
 
   tags = local.common_tags
