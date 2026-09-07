@@ -1,0 +1,28 @@
+{
+  "DocumentName": "AWS-RunShellScript",
+  "InstanceIds": ["i-06e3745274ed0fac4"],
+  "TimeoutSeconds": 1800,
+  "Parameters": {
+    "commands": [
+      "set -euxo pipefail",
+      "cd /opt/esafx",
+      "REGION=ap-southeast-3",
+      "GITHUB_TOKEN=$(aws secretsmanager get-secret-value --secret-id esafx/staging/github-clone --region $REGION --query SecretString --output text)",
+      "git -C crm-service remote set-url origin \"https://x-access-token:${GITHUB_TOKEN}@github.com/Esa-FX/crm-service.git\"",
+      "git -C crm-service fetch origin staging",
+      "git -C crm-service checkout staging",
+      "git -C crm-service reset --hard origin/staging",
+      "git -C crm-service remote set-url origin \"https://github.com/Esa-FX/crm-service.git\"",
+      "git -C crm-service log -1 --oneline",
+      "docker compose -f deploy/staging/docker-compose.app.yml --profile migrate run --rm --build crm-migrate",
+      "docker compose -f deploy/staging/docker-compose.app.yml build crm-api",
+      "docker compose -f deploy/staging/docker-compose.app.yml up -d --force-recreate crm-api",
+      "sleep 15",
+      "curl -sf http://127.0.0.1:8001/health && echo staging-crm-api-ok",
+      "CID=$(docker compose -f deploy/staging/docker-compose.app.yml ps -q crm-api)",
+      "docker exec -d \"$CID\" python scripts/backfill_login_daily_actuals.py --months 24",
+      "echo login-daily-backfill-started",
+      "unset GITHUB_TOKEN"
+    ]
+  }
+}
