@@ -1,0 +1,37 @@
+{
+  "DocumentName": "AWS-RunShellScript",
+  "InstanceIds": ["i-06e3745274ed0fac4"],
+  "TimeoutSeconds": 2400,
+  "Parameters": {
+    "commands": [
+      "set -euxo pipefail",
+      "cd /opt/esafx",
+      "REGION=ap-southeast-3",
+      "GITHUB_TOKEN=$(aws secretsmanager get-secret-value --secret-id esafx/staging/github-clone --region $REGION --query SecretString --output text)",
+      "git_pull() { local name=$1 branch=$2; local url=\"https://x-access-token:${GITHUB_TOKEN}@github.com/Esa-FX/${name}.git\"; git -C \"$name\" remote set-url origin \"$url\"; git -C \"$name\" fetch origin \"$branch\"; git -C \"$name\" checkout \"$branch\"; git -C \"$name\" reset --hard \"origin/$branch\"; git -C \"$name\" remote set-url origin \"https://github.com/Esa-FX/${name}.git\"; git -C \"$name\" log -1 --oneline; }",
+      "git_pull deploy main",
+      "git_pull client-service staging",
+      "git_pull backoffice-service staging",
+      "CLIENT_ENV=/opt/esafx/client-service/.env.staging",
+      "BO_ENV=/opt/esafx/backoffice-service/.env.staging",
+      "test -f \"$CLIENT_ENV\"",
+      "if [ ! -f \"$BO_ENV\" ]; then cp /opt/esafx/backoffice-service/.env.staging.example \"$BO_ENV\"; fi",
+      "grep -q '^COGNITO_USER_POOL_ID=' \"$CLIENT_ENV\" && sed -i 's/^COGNITO_USER_POOL_ID=.*/COGNITO_USER_POOL_ID=ap-southeast-3_pvuDxqsmS/' \"$CLIENT_ENV\" || echo 'COGNITO_USER_POOL_ID=ap-southeast-3_pvuDxqsmS' >> \"$CLIENT_ENV\"",
+      "grep -q '^COGNITO_CLIENT_ID=' \"$CLIENT_ENV\" && sed -i 's/^COGNITO_CLIENT_ID=.*/COGNITO_CLIENT_ID=3hdmqgus41vtmau99llj82l36c/' \"$CLIENT_ENV\" || echo 'COGNITO_CLIENT_ID=3hdmqgus41vtmau99llj82l36c' >> \"$CLIENT_ENV\"",
+      "grep -q '^JWT_AUDIENCE=' \"$CLIENT_ENV\" && sed -i 's/^JWT_AUDIENCE=.*/JWT_AUDIENCE=3hdmqgus41vtmau99llj82l36c/' \"$CLIENT_ENV\" || echo 'JWT_AUDIENCE=3hdmqgus41vtmau99llj82l36c' >> \"$CLIENT_ENV\"",
+      "grep -q '^CLIENT_SERVICE_URL=' \"$BO_ENV\" && sed -i 's|^CLIENT_SERVICE_URL=.*|CLIENT_SERVICE_URL=http://client:8000|' \"$BO_ENV\" || echo 'CLIENT_SERVICE_URL=http://client:8000' >> \"$BO_ENV\"",
+      "TOKEN=$(grep '^INTERNAL_SERVICE_TOKEN=' \"$CLIENT_ENV\" | cut -d= -f2- || true)",
+      "if [ -n \"$TOKEN\" ]; then grep -q '^INTERNAL_SERVICE_TOKEN=' \"$BO_ENV\" && sed -i \"s|^INTERNAL_SERVICE_TOKEN=.*|INTERNAL_SERVICE_TOKEN=${TOKEN}|\" \"$BO_ENV\" || echo \"INTERNAL_SERVICE_TOKEN=${TOKEN}\" >> \"$BO_ENV\"; fi",
+      "COMPOSE=/opt/esafx/deploy/staging/docker-compose.app.yml",
+      "docker compose -f \"$COMPOSE\" --profile migrate run --rm --build client-migrate",
+      "docker compose -f \"$COMPOSE\" build client backoffice",
+      "docker compose -f \"$COMPOSE\" up -d --no-deps --force-recreate client backoffice",
+      "sleep 20",
+      "curl -sf http://127.0.0.1:8002/health && echo staging-client-ok",
+      "curl -sf http://127.0.0.1:8008/health && echo staging-backoffice-ok",
+      "git -C client-service log -1 --oneline",
+      "git -C backoffice-service log -1 --oneline",
+      "unset GITHUB_TOKEN"
+    ]
+  }
+}

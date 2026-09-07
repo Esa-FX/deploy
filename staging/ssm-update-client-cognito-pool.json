@@ -1,0 +1,16 @@
+{
+  "DocumentName": "AWS-RunShellScript",
+  "InstanceIds": ["i-06e3745274ed0fac4"],
+  "TimeoutSeconds": 300,
+  "Parameters": {
+    "commands": [
+      "set -euxo pipefail",
+      "ENV=/opt/esafx/client-service/.env.staging",
+      "test -f \"$ENV\"",
+      "grep -q '^COGNITO_USER_POOL_ID=' \"$ENV\" && sed -i 's/^COGNITO_USER_POOL_ID=.*/COGNITO_USER_POOL_ID=ap-southeast-3_pvuDxqsmS/' \"$ENV\" || echo 'COGNITO_USER_POOL_ID=ap-southeast-3_pvuDxqsmS' >> \"$ENV\"",
+      "grep -q '^COGNITO_CLIENT_ID=' \"$ENV\" && sed -i 's/^COGNITO_CLIENT_ID=.*/COGNITO_CLIENT_ID=3hdmqgus41vtmau99llj82l36c/' \"$ENV\" || echo 'COGNITO_CLIENT_ID=3hdmqgus41vtmau99llj82l36c' >> \"$ENV\"",
+      "grep -q '^JWT_AUDIENCE=' \"$ENV\" && sed -i 's/^JWT_AUDIENCE=.*/JWT_AUDIENCE=3hdmqgus41vtmau99llj82l36c/' \"$ENV\" || echo 'JWT_AUDIENCE=3hdmqgus41vtmau99llj82l36c' >> \"$ENV\"",
+      "grep -nE 'COGNITO_|JWT_AUDIENCE' \"$ENV\""
+    ]
+  }
+}
