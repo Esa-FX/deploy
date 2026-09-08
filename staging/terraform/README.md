@@ -4,6 +4,14 @@ Provisions S3 buckets and app EC2 IAM policies for:
 
 - VoIP call recording ingest + CRM playback
 - FTD form attachment uploads (deposit proof, chat evidence)
+- Client-area Cognito admin (seed + portal user provisioning) on `esafx-staging-client-area`
+
+If `esafx-staging-cognito-client-area` already exists on the role:
+
+```bash
+terraform import aws_iam_role_policy.cognito_client_area_app_ec2 esafx-staging-ec2-app-role:esafx-staging-cognito-client-area
+```
+
 
 ## Apply
 
