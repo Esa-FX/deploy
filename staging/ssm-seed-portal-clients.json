@@ -1,0 +1,20 @@
+{
+  "DocumentName": "AWS-RunShellScript",
+  "InstanceIds": ["i-06e3745274ed0fac4"],
+  "TimeoutSeconds": 1200,
+  "Comment": "Staging: seed portal dummy clients paired to Meta ingest logins",
+  "Parameters": {
+    "commands": [
+      "set -euxo pipefail",
+      "cd /opt/esafx",
+      "REGION=ap-southeast-3",
+      "GITHUB_TOKEN=$(aws secretsmanager get-secret-value --secret-id esafx/staging/github-clone --region $REGION --query SecretString --output text)",
+      "git_pull() { local name=$1 branch=$2; local url=\"https://x-access-token:${GITHUB_TOKEN}@github.com/Esa-FX/${name}.git\"; git -C \"$name\" remote set-url origin \"$url\"; git -C \"$name\" fetch origin \"$branch\"; git -C \"$name\" checkout \"$branch\"; git -C \"$name\" reset --hard \"origin/$branch\"; git -C \"$name\" remote set-url origin \"https://github.com/Esa-FX/${name}.git\"; git -C \"$name\" log -1 --oneline; }",
+      "git_pull crm-service staging",
+      "git_pull deploy main",
+      "chmod +x /opt/esafx/deploy/staging/seed-staging-portal-clients.sh",
+      "/opt/esafx/deploy/staging/seed-staging-portal-clients.sh",
+      "unset GITHUB_TOKEN"
+    ]
+  }
+}
