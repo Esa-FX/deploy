@@ -180,6 +180,8 @@ services:
       - "${CLIENT_PORT:-8002}:8000"
     env_file:
       - ../../client-service/.env.staging
+    environment:
+      SIMULATE_EXTERNAL: "true"
     volumes: *rds-ca-volume
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]

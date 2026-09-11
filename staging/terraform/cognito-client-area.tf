@@ -19,6 +19,7 @@ resource "aws_iam_role_policy" "cognito_client_area_app_ec2" {
           "cognito-idp:AdminSetUserPassword",
           "cognito-idp:AdminUpdateUserAttributes",
           "cognito-idp:AdminGetUser",
+          "cognito-idp:AdminConfirmSignUp",
         ]
         Resource = "arn:aws:cognito-idp:${var.aws_region}:${data.aws_caller_identity.current.account_id}:userpool/${var.client_area_user_pool_id}"
       },
