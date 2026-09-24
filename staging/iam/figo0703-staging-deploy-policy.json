@@ -1,0 +1,112 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "SSMSendCommandStaging",
+      "Effect": "Allow",
+      "Action": "ssm:SendCommand",
+      "Resource": [
+        "arn:aws:ec2:ap-southeast-3:612524168745:instance/i-06e3745274ed0fac4",
+        "arn:aws:ec2:ap-southeast-3:612524168745:instance/i-082a9df5e269d8ae5",
+        "arn:aws:ssm:ap-southeast-3::document/AWS-RunShellScript",
+        "arn:aws:ssm:ap-southeast-3::document/AWS-RunPowerShellScript"
+      ]
+    },
+    {
+      "Sid": "SSMPollCommands",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetCommandInvocation",
+        "ssm:ListCommandInvocations",
+        "ssm:ListCommands"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "SSMDescribeInstances",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:DescribeInstanceInformation",
+        "ssm:DescribeSessions",
+        "ssm:GetConnectionStatus"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "SSMSessionStaging",
+      "Effect": "Allow",
+      "Action": "ssm:StartSession",
+      "Resource": [
+        "arn:aws:ec2:ap-southeast-3:612524168745:instance/i-06e3745274ed0fac4",
+        "arn:aws:ec2:ap-southeast-3:612524168745:instance/i-082a9df5e269d8ae5",
+        "arn:aws:ssm:ap-southeast-3:612524168745:document/SSM-SessionManagerRunShell"
+      ]
+    },
+    {
+      "Sid": "SSMSessionMessages",
+      "Effect": "Allow",
+      "Action": [
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenControlChannel",
+        "ssmmessages:OpenDataChannel"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "EC2DescribeStaging",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeInstances",
+        "ec2:DescribeTags"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "StagingFrontendS3",
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::esafx-crm-frontend-staging-612524168745",
+        "arn:aws:s3:::esafx-client-frontend-staging-612524168745"
+      ]
+    },
+    {
+      "Sid": "StagingFrontendS3Objects",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::esafx-crm-frontend-staging-612524168745/*",
+        "arn:aws:s3:::esafx-client-frontend-staging-612524168745/*"
+      ]
+    },
+    {
+      "Sid": "StagingFrontendBucketCors",
+      "Effect": "Allow",
+      "Action": ["s3:GetBucketCORS", "s3:PutBucketCORS"],
+      "Resource": [
+        "arn:aws:s3:::esafx-crm-frontend-staging-612524168745",
+        "arn:aws:s3:::esafx-client-frontend-staging-612524168745"
+      ]
+    },
+    {
+      "Sid": "StagingFrontendCloudFront",
+      "Effect": "Allow",
+      "Action": [
+        "cloudfront:CreateInvalidation",
+        "cloudfront:GetInvalidation",
+        "cloudfront:ListInvalidations"
+      ],
+      "Resource": [
+        "arn:aws:cloudfront::612524168745:distribution/E2BJOY6OD647ND",
+        "arn:aws:cloudfront::612524168745:distribution/EB6R1I9TRV3B6"
+      ]
+    }
+  ]
+}
