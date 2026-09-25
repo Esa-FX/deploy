@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Overnight 21:00 Asia/Jakarta: deploy fast closed-lots, DB maintain, requeue recent deal sync.
 set -euo pipefail
+rm -f /tmp/tr_admin.json
 export TZ=Asia/Jakarta
 LOG="${LOG:-/var/log/esafx-overnight-valid-lots.log}"
 REGION="${AWS_REGION:-ap-southeast-3}"
@@ -31,10 +32,13 @@ curl -sf http://127.0.0.1:8001/ready
 echo
 
 echo "==> trading DB maintain + open_time backfill (position_id) + requeue sync"
-aws secretsmanager get-secret-value --secret-id esafx/production/db/trading --region "$REGION" --query SecretString --output text >/tmp/tr_admin.json
+umask 077
+TR_ADMIN_JSON=$(mktemp /tmp/tr_admin.XXXXXXXX)
+trap 'rm -f "$TR_ADMIN_JSON" /tmp/overnight_db.py' EXIT INT TERM
+aws secretsmanager get-secret-value --secret-id esafx/production/db/trading --region "$REGION" --query SecretString --output text >"$TR_ADMIN_JSON"
 cat >/tmp/overnight_db.py <<'PY'
-import asyncio, asyncpg, ssl, json
-s = json.load(open("/tmp/tr_admin.json"))
+import asyncio, asyncpg, ssl, json, os
+s = json.load(open(os.environ["TR_ADMIN_JSON"]))
 
 async def main():
     ctx = ssl.create_default_context()
@@ -122,9 +126,9 @@ async def main():
 
 asyncio.run(main())
 PY
-docker cp /tmp/tr_admin.json esafx-crm-api:/tmp/tr_admin.json
+docker cp "$TR_ADMIN_JSON" esafx-crm-api:/tmp/tr_admin.json
 docker cp /tmp/overnight_db.py esafx-crm-api:/tmp/overnight_db.py
-docker exec esafx-crm-api python /tmp/overnight_db.py
+docker exec -e TR_ADMIN_JSON=/tmp/tr_admin.json esafx-crm-api python /tmp/overnight_db.py
 
 echo "==> smoke"
 sleep 5
@@ -132,6 +136,5 @@ curl -sf http://127.0.0.1:8001/ready; echo
 POOL=$(docker logs esafx-crm-api --since 3m 2>&1 | grep -c QueuePool || true)
 echo "pool_errors_3m=$POOL"
 
-rm -f /tmp/tr_admin.json /tmp/overnight_db.py
 docker exec -u root esafx-crm-api rm -f /tmp/tr_admin.json /tmp/overnight_db.py || true
 echo "===== END $(date -Is) ====="
