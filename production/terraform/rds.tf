@@ -18,6 +18,31 @@ resource "random_password" "service_tokens" {
   special = false
 }
 
+resource "random_password" "crm_internal" {
+  length  = 48
+  special = false
+}
+
+resource "random_password" "mt_bridge_crm" {
+  length  = 48
+  special = false
+}
+
+resource "random_password" "mt_bridge_client" {
+  length  = 48
+  special = false
+}
+
+resource "random_password" "mt_bridge_admin" {
+  length  = 48
+  special = false
+}
+
+resource "random_password" "dealer_webhook" {
+  length  = 48
+  special = false
+}
+
 resource "random_password" "audit_api_key" {
   length  = 48
   special = false

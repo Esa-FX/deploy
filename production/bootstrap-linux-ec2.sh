@@ -90,8 +90,14 @@ CORE_HOST="$(json_field "$CORE_JSON" host)"
 CORE_DB="$(json_field "$CORE_JSON" dbname)"
 TOKENS_JSON="$(aws secretsmanager get-secret-value --secret-id esafx/production/service-tokens --region "$REGION" --query SecretString --output text)"
 CLIENT_TOKEN="$(json_field "$TOKENS_JSON" client)"
-MT_TOKEN="$(json_field "$TOKENS_JSON" mt_bridge)"
+CRM_INTERNAL_TOKEN="$(json_field "$TOKENS_JSON" crm_internal)"
+MT_CRM_TOKEN="$(json_field "$TOKENS_JSON" mt_bridge_crm)"
+MT_CLIENT_TOKEN="$(json_field "$TOKENS_JSON" mt_bridge_client)"
 PII_TOKEN="$(json_field "$TOKENS_JSON" pii_vault)"
+if [[ -z "$CRM_INTERNAL_TOKEN" || "$CRM_INTERNAL_TOKEN" == "dev-internal-token" ]]; then
+  echo "crm_internal missing or invalid in service-tokens" >&2
+  exit 1
+fi
 AUDIT_KEY="$(aws secretsmanager get-secret-value --secret-id esafx/production/audit/api-key --region "$REGION" --query SecretString --output text)"
 
 write_env() {
@@ -168,18 +174,18 @@ if [[ "$TIER" == "crm" ]]; then
     VOIP_GATEWAY_URL "http://${VOIP_IP}:8006" \
     MT_BRIDGE_SERVICE_URL "http://${MT_IP}:8003" \
     CLIENT_SERVICE_URL "http://client:8000" \
-    CLIENT_SERVICE_TOKEN "$CLIENT_TOKEN" MT_BRIDGE_SERVICE_TOKEN "$MT_TOKEN" \
+    CLIENT_SERVICE_TOKEN "$CLIENT_TOKEN" MT_BRIDGE_SERVICE_TOKEN "$MT_CRM_TOKEN" \
     PII_VAULT_SERVICE_TOKEN "$PII_TOKEN" AUDIT_LOG_API_KEY "$AUDIT_KEY" \
     EVENTBRIDGE_AUDIT_BUS_NAME "$AUDIT_BUS" KMS_KEY_ID "$KMS_ARN" \
     S3_RECORDINGS_BUCKET "$CALL_BUCKET" S3_FTD_UPLOADS_BUCKET "$FTD_BUCKET" \
-    VOIP_GATEWAY_TOKEN "$CLIENT_TOKEN" INTERNAL_SERVICE_TOKEN "$CLIENT_TOKEN" AWS_REGION "$REGION"
+    VOIP_GATEWAY_TOKEN "$CLIENT_TOKEN" INTERNAL_SERVICE_TOKEN "$CRM_INTERNAL_TOKEN" AWS_REGION "$REGION"
 
   write_env "$ROOT/client-service/.env.production" \
     DB_HOST "$CORE_HOST" DB_PASSWORD "$CORE_PASS" DB_SSL true DB_SSL_CA_FILE "$ROOT/global-bundle.pem" \
     REDIS_HOST "$REDIS_HOST" REDIS_SSL false \
     COGNITO_USER_POOL_ID "$COGNITO_POOL" COGNITO_REGION "$REGION" \
-    MT_BRIDGE_SERVICE_URL "http://${MT_IP}:8003" MT_BRIDGE_SERVICE_TOKEN "$MT_TOKEN" \
-    INTERNAL_SERVICE_TOKEN "$CLIENT_TOKEN" ENVIRONMENT production \
+    MT_BRIDGE_SERVICE_URL "http://${MT_IP}:8003" MT_BRIDGE_SERVICE_TOKEN "$MT_CLIENT_TOKEN" \
+    INTERNAL_SERVICE_TOKEN "$CLIENT_TOKEN" CRM_INTERNAL_TOKEN "$CRM_INTERNAL_TOKEN" ENVIRONMENT production \
     S3_KYC_BUCKET "esafx-kyc-docs-production-${ACCOUNT_ID}" \
     S3_AGREEMENTS_BUCKET "esafx-signed-agreements-production-${ACCOUNT_ID}" \
     AWS_REGION "$REGION"
@@ -192,7 +198,7 @@ if [[ "$TIER" == "voip" ]]; then
   write_env "$ROOT/voip-gateway-service/.env.production" \
     DB_HOST "$CORE_HOST" DB_PASSWORD "$CORE_PASS" DB_SSL true DB_SSL_CA_FILE "$ROOT/global-bundle.pem" \
     INTERNAL_TOKEN "$CLIENT_TOKEN" \
-    CRM_API_URL "http://${CRM_IP}:8001" CRM_INTERNAL_TOKEN "$CLIENT_TOKEN" \
+    CRM_API_URL "http://${CRM_IP}:8001" CRM_INTERNAL_TOKEN "$CRM_INTERNAL_TOKEN" \
     PII_VAULT_SERVICE_URL "http://${CORE_IP}:8004" PII_VAULT_SERVICE_TOKEN "$PII_TOKEN" \
     AUDIT_LOG_SERVICE_URL "http://${CORE_IP}:8005" AUDIT_LOG_API_KEY "$AUDIT_KEY" \
     ENVIRONMENT production \

@@ -76,17 +76,25 @@ resource "aws_security_group" "app" {
   tags = merge(local.common_tags, { Name = "${local.name_prefix}-app-sg" })
 }
 
+resource "aws_security_group" "mt_bridge_callers" {
+  name        = "${local.name_prefix}-mt-bridge-callers-sg"
+  description = "Hosts allowed to call mt-bridge :8003 (core + crm only)"
+  vpc_id      = aws_vpc.main.id
+
+  tags = merge(local.common_tags, { Name = "${local.name_prefix}-mt-bridge-callers-sg" })
+}
+
 resource "aws_security_group" "mt" {
   name        = "${local.name_prefix}-mt-sg"
   description = "Windows MT bridge"
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description     = "MT bridge from app tier"
+    description     = "MT bridge from callers tier"
     from_port       = 8003
     to_port         = 8003
     protocol        = "tcp"
-    security_groups = [aws_security_group.app.id]
+    security_groups = [aws_security_group.mt_bridge_callers.id]
   }
 
   egress {

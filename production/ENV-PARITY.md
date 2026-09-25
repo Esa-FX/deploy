@@ -33,6 +33,10 @@ These must always match within an environment:
 | CRM (`crm-service`) | VoIP (`voip-gateway-service`) | Source |
 |-------------------|-------------------------------|--------|
 | `VOIP_GATEWAY_TOKEN` | `INTERNAL_TOKEN` | `service-tokens` secret → `client` key |
+| `INTERNAL_SERVICE_TOKEN` | `CRM_INTERNAL_TOKEN` | `service-tokens` → `crm_internal` |
+| `MT_BRIDGE_SERVICE_TOKEN` | (client uses own token) | `mt_bridge_crm` / `mt_bridge_client` |
+
+Client-service: `CRM_INTERNAL_TOKEN` = `crm_internal` (calls into crm).
 
 Sync scripts set both automatically:
 
