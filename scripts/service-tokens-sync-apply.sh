@@ -57,10 +57,13 @@ service_tokens_sync_apply() {
   set_env_var "$client_env" MT_BRIDGE_SERVICE_TOKEN "$mt_client_token" "$dry_run"
 
   set_env_var "$pii_env" SERVICE_TOKEN "$pii_token" "$dry_run"
-  set_client_pairing_var "$voip_env" INTERNAL_TOKEN "$client_token"
-  set_env_var "$voip_env" PII_VAULT_SERVICE_TOKEN "$pii_token" "$dry_run"
-  set_client_pairing_var "$wa_env" INTERNAL_TOKEN "$client_token"
-  set_env_var "$wa_env" PII_VAULT_SERVICE_TOKEN "$pii_token" "$dry_run"
+  # Gateway pairs (crm VOIP_GATEWAY_TOKEN == voip INTERNAL_TOKEN, etc.): keep-existing on both sides.
+  if [[ -f "$voip_env" ]]; then
+    set_env_var "$voip_env" PII_VAULT_SERVICE_TOKEN "$pii_token" "$dry_run"
+  fi
+  if [[ "$include_whatsapp_crm_internal" == true && -f "$wa_env" ]]; then
+    set_env_var "$wa_env" PII_VAULT_SERVICE_TOKEN "$pii_token" "$dry_run"
+  fi
 }
 
 # Read a single KEY=value from an env file (no export). Empty if missing.

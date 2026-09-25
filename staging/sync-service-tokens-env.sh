@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # Sync inter-service auth tokens from Secrets Manager into .env.staging files.
 #
-# Pairings (client key): crm CLIENT_SERVICE_TOKEN == client INTERNAL_SERVICE_TOKEN;
-# crm VOIP_GATEWAY_TOKEN == voip INTERNAL_TOKEN; crm WHATSAPP_GATEWAY_TOKEN == whatsapp INTERNAL_TOKEN.
-# Gateway tokens on crm are not rewritten here — set them to match gateways when provisioning.
+# Pairing (client key): crm CLIENT_SERVICE_TOKEN == client INTERNAL_SERVICE_TOKEN.
+# Gateway pairs (crm VOIP_GATEWAY_TOKEN == voip INTERNAL_TOKEN, etc.) are keep-existing on both sides in normal sync.
 #
 # --rotate-crm-internal: writes only crm INTERNAL_SERVICE_TOKEN and gateway CRM_INTERNAL_TOKEN
 # (voip + whatsapp on staging) from crm_internal. Does not touch pairing keys.

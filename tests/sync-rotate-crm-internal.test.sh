@@ -180,7 +180,6 @@ write_env "$CLIENT" INTERNAL_SERVICE_TOKEN keep-client MT_BRIDGE_SERVICE_TOKEN k
 write_env "$VOIP" INTERNAL_TOKEN keep-voip-in CRM_INTERNAL_TOKEN keep-crm-int PII_VAULT_SERVICE_TOKEN keep-pii-v
 write_env "$WA" INTERNAL_TOKEN keep-wa-in CRM_INTERNAL_TOKEN keep-crm-int PII_VAULT_SERVICE_TOKEN keep-pii-w
 write_env "$PII" SERVICE_TOKEN keep-pii-svc
-
 SYNC_JSON='{"client":"new-client-secret","mt_bridge_crm":"new-mt-crm","mt_bridge_client":"new-mt-cli","pii_vault":"new-pii"}'
 service_tokens_sync_apply "test/secret" "$SYNC_JSON" "$fixture_root" staging false false true
 
@@ -189,6 +188,16 @@ if [[ "$(env_file_get "$CRM" VOIP_GATEWAY_TOKEN)" == "keep-voip-gw" ]] &&
   pass "normal sync keeps crm VOIP/WHATSAPP gateway tokens"
 else
   fail "normal sync keeps crm VOIP/WHATSAPP gateway tokens"
+fi
+if [[ "$(env_file_get "$VOIP" INTERNAL_TOKEN)" == "keep-voip-in" ]]; then
+  pass "normal sync keeps voip INTERNAL_TOKEN"
+else
+  fail "normal sync keeps voip INTERNAL_TOKEN"
+fi
+if [[ "$(env_file_get "$WA" INTERNAL_TOKEN)" == "keep-wa-in" ]]; then
+  pass "normal sync keeps whatsapp INTERNAL_TOKEN"
+else
+  fail "normal sync keeps whatsapp INTERNAL_TOKEN"
 fi
 if [[ "$(env_file_get "$CRM" CLIENT_SERVICE_TOKEN)" == "new-client-secret" ]]; then
   pass "normal sync updates CLIENT_SERVICE_TOKEN"

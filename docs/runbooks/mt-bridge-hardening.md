@@ -10,7 +10,7 @@ Never log secret values. Do not pass secrets in SSM command parameters.
 
 | Secret key | Env var(s) |
 |------------|------------|
-| `client` | crm `CLIENT_SERVICE_TOKEN`; client `INTERNAL_SERVICE_TOKEN`; voip/whatsapp `INTERNAL_TOKEN` |
+| `client` | crm `CLIENT_SERVICE_TOKEN`; client `INTERNAL_SERVICE_TOKEN` (normal sync only) |
 | `crm_internal` | crm `INTERNAL_SERVICE_TOKEN`; voip/whatsapp `CRM_INTERNAL_TOKEN` — **only** via `--rotate-crm-internal` (whatsapp staging only) |
 | `mt_bridge_crm` / `mt_bridge_client` | crm / client `MT_BRIDGE_SERVICE_TOKEN` |
 | `pii_vault` | crm `PII_VAULT_SERVICE_TOKEN`; pii-vault `SERVICE_TOKEN`; voip/whatsapp `PII_VAULT_SERVICE_TOKEN` |
@@ -23,7 +23,7 @@ Never log secret values. Do not pass secrets in SSM command parameters.
 - crm `VOIP_GATEWAY_TOKEN` == voip `INTERNAL_TOKEN`
 - crm `WHATSAPP_GATEWAY_TOKEN` == whatsapp `INTERNAL_TOKEN`
 
-`sync-service-tokens-env.sh` **does not rewrite** crm `VOIP_GATEWAY_TOKEN` or `WHATSAPP_GATEWAY_TOKEN` — set those when provisioning so they match the gateways. client-service has **no** `CRM_INTERNAL_TOKEN`.
+Normal sync **does not rewrite** either side of gateway pairs (crm `VOIP_GATEWAY_TOKEN` / `WHATSAPP_GATEWAY_TOKEN` or voip/whatsapp `INTERNAL_TOKEN`). Provision or rotate those pairs together out of band so they stay equal. client-service has **no** `CRM_INTERNAL_TOKEN`.
 
 **`--rotate-crm-internal`** updates **only** crm `INTERNAL_SERVICE_TOKEN` and gateway `CRM_INTERNAL_TOKEN` (voip + whatsapp on staging; voip only in production). Run it as a separate invocation after the normal mt_bridge sync.
 
