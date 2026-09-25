@@ -8,14 +8,24 @@ Never log secret values. Do not pass secrets in SSM command parameters.
 
 ## Secret keys (`esafx/<env>/service-tokens`)
 
-| Key | Used by |
-|-----|---------|
-| `client` | crm `CLIENT_SERVICE_TOKEN` → client `INTERNAL_SERVICE_TOKEN`; voip/whatsapp `INTERNAL_TOKEN` (client routes) |
-| `crm_internal` | crm-api `INTERNAL_SERVICE_TOKEN`; voip-gateway + whatsapp-gateway `CRM_INTERNAL_TOKEN` (staging only for whatsapp) — **only with `--rotate-crm-internal`** |
-| `mt_bridge_crm` | crm-api `MT_BRIDGE_SERVICE_TOKEN` |
-| `mt_bridge_client` | client-service `MT_BRIDGE_SERVICE_TOKEN` |
-| `mt_bridge_admin` | MT host `MT_BRIDGE_TOKEN_ADMIN` |
-| `mt_bridge` | Legacy shared token — remove after both environments pass (see below) |
+| Secret key | Env var(s) |
+|------------|------------|
+| `client` | crm `CLIENT_SERVICE_TOKEN`; client `INTERNAL_SERVICE_TOKEN`; voip/whatsapp `INTERNAL_TOKEN` |
+| `crm_internal` | crm `INTERNAL_SERVICE_TOKEN`; voip/whatsapp `CRM_INTERNAL_TOKEN` — **only** via `--rotate-crm-internal` (whatsapp staging only) |
+| `mt_bridge_crm` / `mt_bridge_client` | crm / client `MT_BRIDGE_SERVICE_TOKEN` |
+| `pii_vault` | crm `PII_VAULT_SERVICE_TOKEN`; pii-vault `SERVICE_TOKEN`; voip/whatsapp `PII_VAULT_SERVICE_TOKEN` |
+| `mt_bridge_admin` | MT host `MT_BRIDGE_TOKEN_ADMIN` (Windows sync script) |
+| `mt_bridge` | Legacy — remove after both environments pass (see below) |
+
+**Pairings (must stay aligned; not changed by `--rotate-crm-internal`):**
+
+- crm `CLIENT_SERVICE_TOKEN` == client `INTERNAL_SERVICE_TOKEN` (`client` key)
+- crm `VOIP_GATEWAY_TOKEN` == voip `INTERNAL_TOKEN`
+- crm `WHATSAPP_GATEWAY_TOKEN` == whatsapp `INTERNAL_TOKEN`
+
+`sync-service-tokens-env.sh` **does not rewrite** crm `VOIP_GATEWAY_TOKEN` or `WHATSAPP_GATEWAY_TOKEN` — set those when provisioning so they match the gateways. client-service has **no** `CRM_INTERNAL_TOKEN`.
+
+**`--rotate-crm-internal`** updates **only** crm `INTERNAL_SERVICE_TOKEN` and gateway `CRM_INTERNAL_TOKEN` (voip + whatsapp on staging; voip only in production). Run it as a separate invocation after the normal mt_bridge sync.
 
 Webhook: `esafx/<env>/mt-bridge-webhook` → `dealer_webhook` → `DEALER_WEBHOOK_SECRET` on MT host (opt-in).
 
@@ -72,18 +82,24 @@ aws secretsmanager get-secret-value --secret-id esafx/staging/service-tokens --r
 cd /opt/esafx
 ./deploy/staging/sync-service-tokens-env.sh --dry-run
 ./deploy/staging/sync-service-tokens-env.sh
-# When crm build + voip/whatsapp CRM token names are confirmed:
+# Separate step when crm build that enforces crm_internal is live (writes only the three CRM-internal vars):
 ./deploy/staging/sync-service-tokens-env.sh --rotate-crm-internal
 ```
 
-Script **exits with error** if required keys are missing, empty, or placeholders (`dev-internal-token`, `changeme`, etc.).
+Script **exits with error** if required keys are missing, empty, or placeholders (`dev-internal-token`, `changeme`, etc.). Normal sync updates `client` / `mt_bridge_*` / `pii_vault` vars only. Rotation does not touch pairing keys or gateway tokens on crm.
 
-### 3. Recreate callers together (avoid 401 window)
+### 3. Recreate containers (avoid 401 window)
 
-After **all** env files are written:
+After **mt_bridge** sync (no `--rotate-crm-internal`):
 
 ```bash
-docker compose -f deploy/staging/docker-compose.app.yml up -d --no-deps --force-recreate crm-api client voip-gateway
+docker compose -f deploy/staging/docker-compose.app.yml up -d --no-deps --force-recreate crm-api client
+```
+
+After **`--rotate-crm-internal`** (crm + both gateways that call crm):
+
+```bash
+docker compose -f deploy/staging/docker-compose.app.yml up -d --no-deps --force-recreate crm-api voip-gateway whatsapp-gateway
 ```
 
 ### 4. MT host — token env (SSM PowerShell)
@@ -156,20 +172,25 @@ Apply in two steps if desired:
 
 ### 2. Sync Linux env
 
-On **CRM EC2** (low traffic):
+On **CRM EC2** (low traffic), after mt_bridge sync:
 
 ```bash
 ./deploy/production/sync-service-tokens-env.sh
-# optional second pass when ready:
-./deploy/production/sync-service-tokens-env.sh --rotate-crm-internal
 docker compose -f deploy/production/docker-compose.crm.yml up -d --no-deps --force-recreate crm-api client
 ```
 
-**VoIP 401 window:** After crm-api is recreated with a new `crm_internal`, voip-gateway still has the old CRM token until its container is recreated. Expect **401s from voip → crm** between the CRM-host step and the VoIP-host step. Run during low traffic and recreate voip **immediately**:
-
-On **VoIP EC2** (seconds later):
+**`crm_internal` rotation** (no whatsapp in production): run sync with `--rotate-crm-internal` on **both** hosts before recreates, then:
 
 ```bash
+# CRM EC2
+./deploy/production/sync-service-tokens-env.sh --rotate-crm-internal
+docker compose -f deploy/production/docker-compose.crm.yml up -d --no-deps --force-recreate crm-api
+```
+
+**VoIP 401 window:** crm-api picks up `INTERNAL_SERVICE_TOKEN` from `crm_internal` on the CRM host while voip-gateway still sends the old `CRM_INTERNAL_TOKEN` until the VoIP host is updated. Expect **401s from voip → crm** between the two recreates. Use **low traffic** and run the VoIP step **immediately**:
+
+```bash
+# VoIP EC2 (seconds later)
 ./deploy/production/sync-service-tokens-env.sh --rotate-crm-internal
 docker compose -f deploy/production/docker-compose.voip.yml up -d --no-deps --force-recreate voip-gateway
 ```

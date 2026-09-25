@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 # Sync inter-service auth tokens from Secrets Manager into .env.staging files.
 #
-# crm-api CLIENT_SERVICE_TOKEN must match client-service INTERNAL_SERVICE_TOKEN (both = client key).
-# client-service does not call crm; do not set CRM-facing tokens on client-service here.
+# Pairings (client key): crm CLIENT_SERVICE_TOKEN == client INTERNAL_SERVICE_TOKEN;
+# crm VOIP_GATEWAY_TOKEN == voip INTERNAL_TOKEN; crm WHATSAPP_GATEWAY_TOKEN == whatsapp INTERNAL_TOKEN.
+# Gateway tokens on crm are not rewritten here — set them to match gateways when provisioning.
 #
-# crm_internal rotation (crm INTERNAL_SERVICE_TOKEN + voip/whatsapp → crm) requires --rotate-crm-internal.
+# --rotate-crm-internal: writes only crm INTERNAL_SERVICE_TOKEN and gateway CRM_INTERNAL_TOKEN
+# (voip + whatsapp on staging) from crm_internal. Does not touch pairing keys.
 #
 # Usage: ./deploy/staging/sync-service-tokens-env.sh [--dry-run] [--rotate-crm-internal]
 set -euo pipefail
 
 DEPLOY_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 REPO_ROOT="$(cd "$DEPLOY_ROOT/.." && pwd)"
-# Monorepo layout: services live next to deploy/. Deploy-only checkout: use DEPLOY_ROOT parent once.
 if [[ ! -d "$REPO_ROOT/crm-service" && -d "$DEPLOY_ROOT/../crm-service" ]]; then
   REPO_ROOT="$(cd "$DEPLOY_ROOT/.." && pwd)"
 elif [[ ! -d "$REPO_ROOT/crm-service" ]]; then
@@ -20,12 +21,13 @@ fi
 
 # shellcheck source=scripts/service-tokens-sync-lib.sh
 source "$DEPLOY_ROOT/scripts/service-tokens-sync-lib.sh"
+# shellcheck source=scripts/service-tokens-sync-apply.sh
+source "$DEPLOY_ROOT/scripts/service-tokens-sync-apply.sh"
 
 SECRET_ID="${SECRET_ID:-esafx/staging/service-tokens}"
 REGION="${AWS_REGION:-ap-southeast-3}"
 DRY_RUN=false
 ROTATE_CRM_INTERNAL=false
-CRM_INTERNAL_TOKEN=""
 
 usage() {
   echo "Usage: $0 [--dry-run] [--rotate-crm-internal]" >&2
@@ -53,58 +55,9 @@ fi
 
 RAW="$(aws secretsmanager get-secret-value --secret-id "$SECRET_ID" --region "$REGION" --query SecretString --output text)"
 
-require_key() {
-  require_service_token_key "$1" "$SECRET_ID" "$RAW"
-}
-
-CLIENT_TOKEN="$(require_key client)"
-MT_CRM_TOKEN="$(require_key mt_bridge_crm)"
-MT_CLIENT_TOKEN="$(require_key mt_bridge_client)"
-PII_TOKEN="$(require_key pii_vault)"
-if [[ "$ROTATE_CRM_INTERNAL" == true ]]; then
-  CRM_INTERNAL_TOKEN="$(require_key crm_internal)"
-  if [[ "$CRM_INTERNAL_TOKEN" == "$CLIENT_TOKEN" ]]; then
-    echo "crm_internal must differ from client key" >&2
-    exit 1
-  fi
-fi
-
-CRM_ENV="$REPO_ROOT/crm-service/.env.staging"
-CLIENT_ENV="$REPO_ROOT/client-service/.env.staging"
-PII_ENV="$REPO_ROOT/pii-vault-service/.env.staging"
-VOIP_ENV="$REPO_ROOT/voip-gateway-service/.env.staging"
-WA_ENV="$REPO_ROOT/whatsapp-gateway-service/.env.staging"
-
-set_client_pairing_var() {
-  guard_client_pairing_key "$1" "$2" "$3" "$CRM_INTERNAL_TOKEN"
-  set_env_var "$1" "$2" "$3" "$DRY_RUN"
-}
-
-set_client_pairing_var "$CRM_ENV" CLIENT_SERVICE_TOKEN "$CLIENT_TOKEN"
-set_env_var "$CRM_ENV" MT_BRIDGE_SERVICE_TOKEN "$MT_CRM_TOKEN" "$DRY_RUN"
-set_env_var "$CRM_ENV" PII_VAULT_SERVICE_TOKEN "$PII_TOKEN" "$DRY_RUN"
-set_env_var "$CRM_ENV" VOIP_GATEWAY_TOKEN "$CLIENT_TOKEN" "$DRY_RUN"
-set_env_var "$CRM_ENV" WHATSAPP_GATEWAY_TOKEN "$CLIENT_TOKEN" "$DRY_RUN"
-
-set_client_pairing_var "$CLIENT_ENV" INTERNAL_SERVICE_TOKEN "$CLIENT_TOKEN"
-set_env_var "$CLIENT_ENV" MT_BRIDGE_SERVICE_TOKEN "$MT_CLIENT_TOKEN" "$DRY_RUN"
-
-set_env_var "$PII_ENV" SERVICE_TOKEN "$PII_TOKEN" "$DRY_RUN"
-set_client_pairing_var "$VOIP_ENV" INTERNAL_TOKEN "$CLIENT_TOKEN"
-set_client_pairing_var "$WA_ENV" INTERNAL_TOKEN "$CLIENT_TOKEN"
-set_env_var "$WA_ENV" PII_VAULT_SERVICE_TOKEN "$PII_TOKEN" "$DRY_RUN"
-
-if [[ "$ROTATE_CRM_INTERNAL" == true ]]; then
-  set_env_var_crm_internal "$CRM_ENV" INTERNAL_SERVICE_TOKEN "$CRM_INTERNAL_TOKEN" "$DRY_RUN"
-  set_env_var_crm_internal "$VOIP_ENV" CRM_INTERNAL_TOKEN "$CRM_INTERNAL_TOKEN" "$DRY_RUN"
-  set_env_var_crm_internal "$WA_ENV" CRM_INTERNAL_TOKEN "$CRM_INTERNAL_TOKEN" "$DRY_RUN"
-else
-  echo "Skipping crm_internal (pass --rotate-crm-internal for crm INTERNAL_SERVICE_TOKEN + voip/whatsapp CRM_INTERNAL_TOKEN)"
-fi
+service_tokens_sync_apply "$SECRET_ID" "$RAW" "$REPO_ROOT" staging "$DRY_RUN" "$ROTATE_CRM_INTERNAL" true
 
 echo "Synced service tokens from $SECRET_ID"
-echo "  - crm-service: CLIENT_SERVICE_TOKEN, MT_BRIDGE_SERVICE_TOKEN, ..."
-echo "  - client-service: INTERNAL_SERVICE_TOKEN, MT_BRIDGE_SERVICE_TOKEN"
 if [[ "$DRY_RUN" == true ]]; then
   echo "[dry-run] no files written"
   exit 0
