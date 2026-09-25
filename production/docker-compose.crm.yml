@@ -16,6 +16,11 @@ services:
       AWS_REGION: ap-southeast-3
 
   crm-api:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     image: ${CRM_IMAGE:-esafx-crm:latest}
     build:
       context: ../../crm-service
