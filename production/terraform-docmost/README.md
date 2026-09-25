@@ -7,6 +7,8 @@ Content still compares **staging vs main** git branches (coverage flags). Infra 
 
 Isolated terraform state from `deploy/production/terraform` (core VPC). Data sources attach to existing prod VPC + ALB.
 
+The wiki ALB listener rule authenticates with the production Cognito app client named `esafx-wiki-alb` before forwarding to the wiki target group; plan should show an in-place update of `aws_lb_listener_rule.wiki`, not a new rule or a destroy.
+
 ```bash
 cd deploy/production/terraform-docmost
 terraform init

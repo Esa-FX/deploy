@@ -32,6 +32,8 @@ terraform plan -out=production.tfplan
 terraform apply production.tfplan
 ```
 
+The first `terraform plan` for this stack imports `aws_cognito_user_pool_client.wiki_alb` (client id resolved by name `esafx-wiki-alb`). Expect in-place updates plus that import; the plan must not destroy or replace the staff user pool, `crm_spa`, or `wiki_alb`. Do not apply a revision that drops `write_attributes` on `crm_spa` or the staff pool `admin_create_user_config` / `user_attribute_update_settings` blocks.
+
 First apply creates ACM DNS validation records automatically when `create_acm_certificates = true`. Allow a few minutes for certificate validation before ALB/CloudFront become healthy.
 
 ### Key outputs (save after apply)

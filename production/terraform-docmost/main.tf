@@ -98,6 +98,14 @@ data "aws_route53_zone" "main" {
   private_zone = false
 }
 
+data "aws_cognito_user_pools" "staff" {
+  name = "esafx-${var.environment}-staff"
+}
+
+data "aws_cognito_user_pool_clients" "staff" {
+  user_pool_id = tolist(data.aws_cognito_user_pools.staff.ids)[0]
+}
+
 data "aws_ami" "al2023" {
   most_recent = true
   owners      = ["amazon"]
@@ -131,6 +139,8 @@ locals {
     Service     = "docmost"
     ManagedBy   = "terraform"
   }
+  wiki_alb_client_index = index(data.aws_cognito_user_pool_clients.staff.client_names, "esafx-wiki-alb")
+  wiki_alb_client_id    = data.aws_cognito_user_pool_clients.staff.client_ids[local.wiki_alb_client_index]
 }
 
 resource "random_password" "app_secret" {
@@ -221,9 +231,9 @@ resource "aws_iam_role_policy" "runtime" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid      = "DocmostSecrets"
-        Effect   = "Allow"
-        Action   = ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"]
+        Sid    = "DocmostSecrets"
+        Effect = "Allow"
+        Action = ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"]
         Resource = [
           "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:esafx/${var.environment}/github-clone*",
           "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:esafx/${var.environment}/docmost/*",
@@ -351,6 +361,21 @@ resource "aws_lb_listener_rule" "wiki" {
   priority     = var.listener_rule_priority
 
   action {
+    order = 1
+    type  = "authenticate-cognito"
+
+    authenticate_cognito {
+      user_pool_arn              = tolist(data.aws_cognito_user_pools.staff.arns)[0]
+      user_pool_client_id        = local.wiki_alb_client_id
+      user_pool_domain           = "esafx-${var.environment}-esandardev"
+      scope                      = "openid"
+      session_timeout            = 28800
+      on_unauthenticated_request = "authenticate"
+    }
+  }
+
+  action {
+    order            = 2
     type             = "forward"
     target_group_arn = aws_lb_target_group.wiki_graph.arn
   }

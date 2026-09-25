@@ -20,6 +20,14 @@ resource "aws_cognito_user_pool" "staff" {
     }
   }
 
+  admin_create_user_config {
+    allow_admin_create_user_only = true
+  }
+
+  user_attribute_update_settings {
+    attributes_require_verification_before_update = ["email"]
+  }
+
   schema {
     name                = "email"
     attribute_data_type = "String"
@@ -88,6 +96,60 @@ resource "aws_cognito_user_pool_client" "crm_spa" {
     id_token      = "minutes"
     refresh_token = "days"
   }
+
+  write_attributes = [
+    "address",
+    "birthdate",
+    "email",
+    "family_name",
+    "gender",
+    "given_name",
+    "locale",
+    "middle_name",
+    "name",
+    "nickname",
+    "picture",
+    "preferred_username",
+    "profile",
+    "updated_at",
+    "website",
+    "zoneinfo",
+  ]
+}
+
+resource "aws_cognito_user_pool_client" "wiki_alb" {
+  name         = "esafx-wiki-alb"
+  user_pool_id = aws_cognito_user_pool.staff.id
+
+  generate_secret = true
+
+  allowed_oauth_flows_user_pool_client = true
+  allowed_oauth_flows                  = ["code"]
+  allowed_oauth_scopes                 = ["openid"]
+
+  callback_urls = ["https://wiki.esandardev.com/oauth2/idpresponse"]
+  logout_urls   = ["https://wiki.esandardev.com/"]
+
+  supported_identity_providers = ["COGNITO"]
+
+  explicit_auth_flows = ["ALLOW_REFRESH_TOKEN_AUTH"]
+
+  read_attributes  = ["email", "email_verified"]
+  write_attributes = ["email", "name"]
+}
+
+data "aws_cognito_user_pool_clients" "staff" {
+  user_pool_id = aws_cognito_user_pool.staff.id
+}
+
+locals {
+  wiki_alb_client_index = index(data.aws_cognito_user_pool_clients.staff.client_names, "esafx-wiki-alb")
+}
+
+# Adopts the existing pool client by id resolved from the pool at plan time. Keep this import so a new state does not create a second client.
+import {
+  to = aws_cognito_user_pool_client.wiki_alb
+  id = "${aws_cognito_user_pool.staff.id}/${data.aws_cognito_user_pool_clients.staff.client_ids[local.wiki_alb_client_index]}"
 }
 
 resource "aws_cognito_user_pool_domain" "staff" {
