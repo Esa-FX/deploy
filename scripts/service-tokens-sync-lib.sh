@@ -41,6 +41,58 @@ compose_escape() {
   printf '%s' "$1" | sed 's/\$/$$/g'
 }
 
+# Keys that must only ever receive the service-tokens "client" key (never crm_internal).
+guard_client_pairing_key() {
+  local file="$1"
+  local key="$2"
+  local value="$3"
+  local crm_internal_value="${4:-}"
+  if [[ -n "$crm_internal_value" && "$value" == "$crm_internal_value" ]]; then
+    echo "Refusing to set ${key} in ${file} from crm_internal (client-pairing key)" >&2
+    exit 1
+  fi
+  case "$key" in
+    CLIENT_SERVICE_TOKEN)
+      [[ "$file" == *crm-service* ]] || {
+        echo "CLIENT_SERVICE_TOKEN must only be set on crm-service env" >&2
+        exit 1
+      }
+      ;;
+    INTERNAL_SERVICE_TOKEN)
+      [[ "$file" == *client-service* ]] || {
+        echo "INTERNAL_SERVICE_TOKEN (client pairing) must only be set on client-service env" >&2
+        exit 1
+      }
+      ;;
+    INTERNAL_TOKEN)
+      [[ "$file" == *voip-gateway* || "$file" == *whatsapp-gateway* ]] || {
+        echo "INTERNAL_TOKEN must only be set on voip/whatsapp gateway env" >&2
+        exit 1
+      }
+      ;;
+  esac
+}
+
+# crm_internal rotation: only these file/key pairs (confirmed in application code).
+set_env_var_crm_internal() {
+  local file="$1"
+  local key="$2"
+  local value="$3"
+  local dry_run="${4:-false}"
+  local allowed=false
+  if [[ "$key" == "INTERNAL_SERVICE_TOKEN" && "$file" == *crm-service* ]]; then
+    allowed=true
+  fi
+  if [[ "$key" == "CRM_INTERNAL_TOKEN" && ( "$file" == *voip-gateway* || "$file" == *whatsapp-gateway* ) ]]; then
+    allowed=true
+  fi
+  if [[ "$allowed" != true ]]; then
+    echo "crm_internal must not be written to ${key} in ${file}" >&2
+    exit 1
+  fi
+  set_env_var "$file" "$key" "$value" "$dry_run"
+}
+
 set_env_var() {
   local file="$1"
   local key="$2"

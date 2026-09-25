@@ -11,7 +11,7 @@ Never log secret values. Do not pass secrets in SSM command parameters.
 | Key | Used by |
 |-----|---------|
 | `client` | crm `CLIENT_SERVICE_TOKEN` → client `INTERNAL_SERVICE_TOKEN`; voip/whatsapp `INTERNAL_TOKEN` (client routes) |
-| `crm_internal` | crm `INTERNAL_SERVICE_TOKEN`; voip/whatsapp CRM-facing token env (see sync script TODOs) — **only with `--rotate-crm-internal`** |
+| `crm_internal` | crm-api `INTERNAL_SERVICE_TOKEN`; voip-gateway + whatsapp-gateway `CRM_INTERNAL_TOKEN` (staging only for whatsapp) — **only with `--rotate-crm-internal`** |
 | `mt_bridge_crm` | crm-api `MT_BRIDGE_SERVICE_TOKEN` |
 | `mt_bridge_client` | client-service `MT_BRIDGE_SERVICE_TOKEN` |
 | `mt_bridge_admin` | MT host `MT_BRIDGE_TOKEN_ADMIN` |

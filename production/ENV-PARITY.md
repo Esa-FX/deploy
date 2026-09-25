@@ -33,7 +33,7 @@ These must always match within an environment:
 | CRM (`crm-service`) | VoIP (`voip-gateway-service`) | Source |
 |-------------------|-------------------------------|--------|
 | `VOIP_GATEWAY_TOKEN` | `INTERNAL_TOKEN` | `service-tokens` secret → `client` key |
-| `INTERNAL_SERVICE_TOKEN` (crm-api) | `CRM_INTERNAL_TOKEN` (voip-gateway) | `service-tokens` → `crm_internal` (only with `--rotate-crm-internal`) |
+| `INTERNAL_SERVICE_TOKEN` (crm-api) | `CRM_INTERNAL_TOKEN` (voip-gateway; whatsapp-gateway on staging only) | `service-tokens` → `crm_internal` (only with `--rotate-crm-internal`) |
 | `MT_BRIDGE_SERVICE_TOKEN` (crm) | `MT_BRIDGE_SERVICE_TOKEN` (client) | `mt_bridge_crm` / `mt_bridge_client` |
 
 client-service does not call crm; `INTERNAL_SERVICE_TOKEN` on client stays paired with crm `CLIENT_SERVICE_TOKEN` (`client` key).

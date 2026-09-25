@@ -25,10 +25,7 @@ SECRET_ID="${SECRET_ID:-esafx/staging/service-tokens}"
 REGION="${AWS_REGION:-ap-southeast-3}"
 DRY_RUN=false
 ROTATE_CRM_INTERNAL=false
-
-# TODO: confirm env var names in voip-gateway / whatsapp-gateway for CRM internal auth.
-VOIP_CRM_TOKEN_ENV_KEY="${VOIP_CRM_TOKEN_ENV_KEY:-CRM_INTERNAL_TOKEN}"
-WHATSAPP_CRM_TOKEN_ENV_KEY="${WHATSAPP_CRM_TOKEN_ENV_KEY:-CRM_INTERNAL_TOKEN}"
+CRM_INTERNAL_TOKEN=""
 
 usage() {
   echo "Usage: $0 [--dry-run] [--rotate-crm-internal]" >&2
@@ -64,6 +61,13 @@ CLIENT_TOKEN="$(require_key client)"
 MT_CRM_TOKEN="$(require_key mt_bridge_crm)"
 MT_CLIENT_TOKEN="$(require_key mt_bridge_client)"
 PII_TOKEN="$(require_key pii_vault)"
+if [[ "$ROTATE_CRM_INTERNAL" == true ]]; then
+  CRM_INTERNAL_TOKEN="$(require_key crm_internal)"
+  if [[ "$CRM_INTERNAL_TOKEN" == "$CLIENT_TOKEN" ]]; then
+    echo "crm_internal must differ from client key" >&2
+    exit 1
+  fi
+fi
 
 CRM_ENV="$REPO_ROOT/crm-service/.env.staging"
 CLIENT_ENV="$REPO_ROOT/client-service/.env.staging"
@@ -71,36 +75,44 @@ PII_ENV="$REPO_ROOT/pii-vault-service/.env.staging"
 VOIP_ENV="$REPO_ROOT/voip-gateway-service/.env.staging"
 WA_ENV="$REPO_ROOT/whatsapp-gateway-service/.env.staging"
 
-set_env_var "$CRM_ENV" CLIENT_SERVICE_TOKEN "$CLIENT_TOKEN" "$DRY_RUN"
+set_client_pairing_var() {
+  guard_client_pairing_key "$1" "$2" "$3" "$CRM_INTERNAL_TOKEN"
+  set_env_var "$1" "$2" "$3" "$DRY_RUN"
+}
+
+set_client_pairing_var "$CRM_ENV" CLIENT_SERVICE_TOKEN "$CLIENT_TOKEN"
 set_env_var "$CRM_ENV" MT_BRIDGE_SERVICE_TOKEN "$MT_CRM_TOKEN" "$DRY_RUN"
 set_env_var "$CRM_ENV" PII_VAULT_SERVICE_TOKEN "$PII_TOKEN" "$DRY_RUN"
 set_env_var "$CRM_ENV" VOIP_GATEWAY_TOKEN "$CLIENT_TOKEN" "$DRY_RUN"
 set_env_var "$CRM_ENV" WHATSAPP_GATEWAY_TOKEN "$CLIENT_TOKEN" "$DRY_RUN"
 
-set_env_var "$CLIENT_ENV" INTERNAL_SERVICE_TOKEN "$CLIENT_TOKEN" "$DRY_RUN"
+set_client_pairing_var "$CLIENT_ENV" INTERNAL_SERVICE_TOKEN "$CLIENT_TOKEN"
 set_env_var "$CLIENT_ENV" MT_BRIDGE_SERVICE_TOKEN "$MT_CLIENT_TOKEN" "$DRY_RUN"
 
 set_env_var "$PII_ENV" SERVICE_TOKEN "$PII_TOKEN" "$DRY_RUN"
-set_env_var "$VOIP_ENV" INTERNAL_TOKEN "$CLIENT_TOKEN" "$DRY_RUN"
-set_env_var "$WA_ENV" INTERNAL_TOKEN "$CLIENT_TOKEN" "$DRY_RUN"
+set_client_pairing_var "$VOIP_ENV" INTERNAL_TOKEN "$CLIENT_TOKEN"
+set_client_pairing_var "$WA_ENV" INTERNAL_TOKEN "$CLIENT_TOKEN"
 set_env_var "$WA_ENV" PII_VAULT_SERVICE_TOKEN "$PII_TOKEN" "$DRY_RUN"
 
 if [[ "$ROTATE_CRM_INTERNAL" == true ]]; then
-  CRM_INTERNAL_TOKEN="$(require_key crm_internal)"
-  set_env_var "$CRM_ENV" INTERNAL_SERVICE_TOKEN "$CRM_INTERNAL_TOKEN" "$DRY_RUN"
-  set_env_var "$VOIP_ENV" "$VOIP_CRM_TOKEN_ENV_KEY" "$CRM_INTERNAL_TOKEN" "$DRY_RUN"
-  set_env_var "$WA_ENV" "$WHATSAPP_CRM_TOKEN_ENV_KEY" "$CRM_INTERNAL_TOKEN" "$DRY_RUN"
+  set_env_var_crm_internal "$CRM_ENV" INTERNAL_SERVICE_TOKEN "$CRM_INTERNAL_TOKEN" "$DRY_RUN"
+  set_env_var_crm_internal "$VOIP_ENV" CRM_INTERNAL_TOKEN "$CRM_INTERNAL_TOKEN" "$DRY_RUN"
+  set_env_var_crm_internal "$WA_ENV" CRM_INTERNAL_TOKEN "$CRM_INTERNAL_TOKEN" "$DRY_RUN"
 else
-  echo "Skipping crm_internal (pass --rotate-crm-internal to set crm INTERNAL_SERVICE_TOKEN and voip/whatsapp CRM tokens)"
+  echo "Skipping crm_internal (pass --rotate-crm-internal for crm INTERNAL_SERVICE_TOKEN + voip/whatsapp CRM_INTERNAL_TOKEN)"
 fi
 
 echo "Synced service tokens from $SECRET_ID"
 echo "  - crm-service: CLIENT_SERVICE_TOKEN, MT_BRIDGE_SERVICE_TOKEN, ..."
 echo "  - client-service: INTERNAL_SERVICE_TOKEN, MT_BRIDGE_SERVICE_TOKEN"
-echo "  - voip/whatsapp: INTERNAL_TOKEN (+ CRM token when --rotate-crm-internal)"
 if [[ "$DRY_RUN" == true ]]; then
   echo "[dry-run] no files written"
   exit 0
 fi
-echo "Recreate callers together (avoid 401 window):"
-echo "  docker compose -f deploy/staging/docker-compose.app.yml up -d --no-deps --force-recreate crm-api client voip-gateway"
+if [[ "$ROTATE_CRM_INTERNAL" == true ]]; then
+  echo "Recreate crm + gateways together (avoid crm_internal 401 window):"
+  echo "  docker compose -f deploy/staging/docker-compose.app.yml up -d --no-deps --force-recreate crm-api voip-gateway whatsapp-gateway"
+else
+  echo "After mt_bridge token changes, recreate crm-api and client:"
+  echo "  docker compose -f deploy/staging/docker-compose.app.yml up -d --no-deps --force-recreate crm-api client"
+fi
