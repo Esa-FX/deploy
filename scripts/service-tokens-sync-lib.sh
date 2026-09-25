@@ -41,6 +41,13 @@ compose_escape() {
   printf '%s' "$1" | sed 's/\$/$$/g'
 }
 
+_SET_ENV_VAR_TMP=""
+_set_env_var_err() {
+  if [[ -n "$_SET_ENV_VAR_TMP" && -f "$_SET_ENV_VAR_TMP" ]]; then
+    rm -f "$_SET_ENV_VAR_TMP"
+  fi
+}
+
 # Keys that must only ever receive the service-tokens "client" key (never crm_internal).
 guard_client_pairing_key() {
   local file="$1"
@@ -98,6 +105,7 @@ set_env_var() {
   local key="$2"
   local value="$3"
   local dry_run="${4:-false}"
+  local dir escaped out
   if [[ ! -f "$file" ]]; then
     echo "Missing $file — copy from env example first." >&2
     return 1
@@ -106,22 +114,16 @@ set_env_var() {
     echo "[dry-run] would set $key in $file"
     return 0
   fi
-  local escaped tmp
+  dir="$(dirname "$file")"
   escaped="$(compose_escape "$value")"
-  local tmp out
-  tmp="$(mktemp)"
-  out="$(mktemp)"
-  grep -Ev "^\s*${key}\s*=" "$file" > "$tmp" || true
-  {
-    cat "$tmp"
-    echo "${key}=${escaped}"
-  } >"$out"
-  rm -f "$tmp"
-  if [[ -f "$file" ]]; then
-    chmod --reference="$file" "$out" 2>/dev/null || chmod 600 "$out"
-    chown --reference="$file" "$out" 2>/dev/null || true
-  else
-    chmod 600 "$out"
-  fi
-  mv "$out" "$file"
+  out="$(mktemp "${dir}/.env-sync.XXXXXX")"
+  _SET_ENV_VAR_TMP="$out"
+  trap '_set_env_var_err' ERR
+  grep -Ev "^\s*${key}\s*=" "$file" >"$out" || true
+  echo "${key}=${escaped}" >>"$out"
+  chmod 600 "$out"
+  chown --reference="$file" "$out" 2>/dev/null || true
+  mv -f "$out" "$file"
+  _SET_ENV_VAR_TMP=""
+  trap - ERR
 }

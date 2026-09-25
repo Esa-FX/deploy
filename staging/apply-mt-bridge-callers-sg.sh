@@ -157,8 +157,10 @@ MT_SG="$(ensure_sg "$MT_SG_NAME" "Windows MT bridge" "$VPC_ID")"
 if [[ "$CALLERS_SG" != "sg-dry-run-placeholder" ]]; then
   APP_SGS="$(instance_group_ids "$APP_INSTANCE_ID")"
   if [[ " $APP_SGS " != *" $CALLERS_SG "* ]]; then
+    read -r -a app_sg_list <<<"$APP_SGS"
+    app_sg_list+=("$CALLERS_SG")
     aws_cmd ec2 modify-instance-attribute --region "$REGION" --instance-id "$APP_INSTANCE_ID" \
-      --groups $APP_SGS "$CALLERS_SG"
+      --groups "${app_sg_list[@]}"
   else
     echo "Callers SG already on app instance"
   fi
@@ -184,8 +186,10 @@ if [[ "$MT_SG" != "sg-dry-run-placeholder" ]]; then
 
   MT_SGS="$(instance_group_ids "$MT_INSTANCE_ID")"
   if [[ " $MT_SGS " != *" $MT_SG "* ]]; then
+    read -r -a mt_sg_list <<<"$MT_SGS"
+    mt_sg_list+=("$MT_SG")
     aws_cmd ec2 modify-instance-attribute --region "$REGION" --instance-id "$MT_INSTANCE_ID" \
-      --groups $MT_SGS "$MT_SG"
+      --groups "${mt_sg_list[@]}"
     MT_SGS="$(instance_group_ids "$MT_INSTANCE_ID")"
   fi
   if [[ " $MT_SGS " == *" $APP_SG "* && " $MT_SGS " == *" $MT_SG "* ]]; then
