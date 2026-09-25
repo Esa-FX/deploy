@@ -62,6 +62,11 @@ resource "aws_cognito_user_pool" "staff" {
   }
 
   tags = local.common_tags
+
+  # Lambda triggers are managed separately.
+  lifecycle {
+    ignore_changes = [lambda_config]
+  }
 }
 
 resource "aws_cognito_user_pool_client" "crm_spa" {
@@ -138,8 +143,12 @@ resource "aws_cognito_user_pool_client" "wiki_alb" {
   write_attributes = ["email", "name"]
 }
 
+data "aws_cognito_user_pools" "staff" {
+  name = "esafx-${var.environment}-staff"
+}
+
 data "aws_cognito_user_pool_clients" "staff" {
-  user_pool_id = aws_cognito_user_pool.staff.id
+  user_pool_id = tolist(data.aws_cognito_user_pools.staff.ids)[0]
 }
 
 locals {
@@ -149,7 +158,7 @@ locals {
 # Adopts the existing pool client by id resolved from the pool at plan time. Keep this import so a new state does not create a second client.
 import {
   to = aws_cognito_user_pool_client.wiki_alb
-  id = "${aws_cognito_user_pool.staff.id}/${data.aws_cognito_user_pool_clients.staff.client_ids[local.wiki_alb_client_index]}"
+  id = "${tolist(data.aws_cognito_user_pools.staff.ids)[0]}/${data.aws_cognito_user_pool_clients.staff.client_ids[local.wiki_alb_client_index]}"
 }
 
 resource "aws_cognito_user_pool_domain" "staff" {

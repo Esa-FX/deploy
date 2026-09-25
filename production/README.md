@@ -8,8 +8,12 @@ Production mirrors staging architecture with **tiered EC2** (core / crm / voip /
 
 - AWS account with permissions for VPC, EC2, RDS, ElastiCache, ALB, Cognito, CloudFront, S3, Route 53, ACM, Secrets Manager, KMS, EventBridge, SQS
 - Public hosted zone for `esandardev.com` in the same account
-- Terraform >= 1.5
+- Terraform >= 1.6
 - Optional: S3 backend + DynamoDB lock table (uncomment in `versions.tf`)
+
+### State
+
+`production/terraform` has no active backend. The S3 backend block in `versions.tf` is commented out, so Terraform uses local state. Do not commit `*.tfstate`, `*.tfstate.*`, `.terraform/`, or `*.tfplan`. A plan that wants to create resources that already exist means the wrong state was used, so stop.
 
 ### Initial sizing (scale later)
 
