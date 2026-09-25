@@ -1,15 +1,47 @@
 #!/usr/bin/env bash
 # Sync inter-service auth tokens from Secrets Manager into .env.staging files.
-# Secret esafx/staging/service-tokens JSON keys: client, mt_bridge, pii_vault
 #
-# crm-api CLIENT_SERVICE_TOKEN must match client-service INTERNAL_SERVICE_TOKEN (both = client).
-# Run on app EC2 after terraform apply or token rotation:
-#   ./deploy/staging/sync-service-tokens-env.sh
+# Pairing (client key): crm CLIENT_SERVICE_TOKEN == client INTERNAL_SERVICE_TOKEN.
+# Gateway pairs (crm VOIP_GATEWAY_TOKEN == voip INTERNAL_TOKEN, etc.) are keep-existing on both sides in normal sync.
+#
+# --rotate-crm-internal: writes only crm INTERNAL_SERVICE_TOKEN and gateway CRM_INTERNAL_TOKEN
+# (voip + whatsapp on staging) from crm_internal. Does not touch pairing keys.
+#
+# Usage: ./deploy/staging/sync-service-tokens-env.sh [--dry-run] [--rotate-crm-internal]
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+DEPLOY_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+REPO_ROOT="$(cd "$DEPLOY_ROOT/.." && pwd)"
+if [[ ! -d "$REPO_ROOT/crm-service" && -d "$DEPLOY_ROOT/../crm-service" ]]; then
+  REPO_ROOT="$(cd "$DEPLOY_ROOT/.." && pwd)"
+elif [[ ! -d "$REPO_ROOT/crm-service" ]]; then
+  REPO_ROOT="$DEPLOY_ROOT"
+fi
+
+# shellcheck source=scripts/service-tokens-sync-lib.sh
+source "$DEPLOY_ROOT/scripts/service-tokens-sync-lib.sh"
+# shellcheck source=scripts/service-tokens-sync-apply.sh
+source "$DEPLOY_ROOT/scripts/service-tokens-sync-apply.sh"
+
 SECRET_ID="${SECRET_ID:-esafx/staging/service-tokens}"
 REGION="${AWS_REGION:-ap-southeast-3}"
+DRY_RUN=false
+ROTATE_CRM_INTERNAL=false
+
+usage() {
+  echo "Usage: $0 [--dry-run] [--rotate-crm-internal]" >&2
+  exit "${1:-0}"
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run) DRY_RUN=true ;;
+    --rotate-crm-internal) ROTATE_CRM_INTERNAL=true ;;
+    -h | --help) usage 0 ;;
+    *) echo "Unknown option: $1" >&2; usage 2 ;;
+  esac
+  shift
+done
 
 if ! command -v aws >/dev/null 2>&1; then
   echo "aws CLI required" >&2
@@ -21,63 +53,18 @@ if ! command -v python3 >/dev/null 2>&1; then
 fi
 
 RAW="$(aws secretsmanager get-secret-value --secret-id "$SECRET_ID" --region "$REGION" --query SecretString --output text)"
-CLIENT_TOKEN="$(echo "$RAW" | python3 -c "import json,sys; print(json.load(sys.stdin)['client'])")"
-MT_TOKEN="$(echo "$RAW" | python3 -c "import json,sys; print(json.load(sys.stdin)['mt_bridge'])")"
-PII_TOKEN="$(echo "$RAW" | python3 -c "import json,sys; print(json.load(sys.stdin)['pii_vault'])")"
 
-# Docker Compose interpolates $ in env_file — escape each $ as $$.
-compose_escape() {
-  printf '%s' "$1" | sed 's/\$/$$/g'
-}
+service_tokens_sync_apply "$SECRET_ID" "$RAW" "$REPO_ROOT" staging "$DRY_RUN" "$ROTATE_CRM_INTERNAL" true
 
-set_env_var() {
-  local file="$1"
-  local key="$2"
-  local value="$3"
-  if [[ ! -f "$file" ]]; then
-    echo "Missing $file — copy from .env.staging.example first." >&2
-    exit 1
-  fi
-  local escaped
-  escaped="$(compose_escape "$value")"
-  local tmp
-  tmp="$(mktemp)"
-  grep -Ev "^\s*${key}\s*=" "$file" > "$tmp" || true
-  {
-    cat "$tmp"
-    echo "${key}=${escaped}"
-  } > "$file"
-  rm -f "$tmp"
-}
-
-CRM_ENV="$REPO_ROOT/crm-service/.env.staging"
-CLIENT_ENV="$REPO_ROOT/client-service/.env.staging"
-PII_ENV="$REPO_ROOT/pii-vault-service/.env.staging"
-VOIP_ENV="$REPO_ROOT/voip-gateway-service/.env.staging"
-WA_ENV="$REPO_ROOT/whatsapp-gateway-service/.env.staging"
-
-set_env_var "$CRM_ENV" CLIENT_SERVICE_TOKEN "$CLIENT_TOKEN"
-set_env_var "$CRM_ENV" MT_BRIDGE_SERVICE_TOKEN "$MT_TOKEN"
-set_env_var "$CRM_ENV" PII_VAULT_SERVICE_TOKEN "$PII_TOKEN"
-set_env_var "$CRM_ENV" VOIP_GATEWAY_TOKEN "$CLIENT_TOKEN"
-set_env_var "$CRM_ENV" WHATSAPP_GATEWAY_TOKEN "$CLIENT_TOKEN"
-set_env_var "$CRM_ENV" INTERNAL_SERVICE_TOKEN "$CLIENT_TOKEN"
-
-set_env_var "$CLIENT_ENV" INTERNAL_SERVICE_TOKEN "$CLIENT_TOKEN"
-set_env_var "$CLIENT_ENV" MT_BRIDGE_SERVICE_TOKEN "$MT_TOKEN"
-
-set_env_var "$PII_ENV" SERVICE_TOKEN "$PII_TOKEN"
-set_env_var "$VOIP_ENV" INTERNAL_TOKEN "$CLIENT_TOKEN"
-set_env_var "$VOIP_ENV" CRM_INTERNAL_TOKEN "$CLIENT_TOKEN"
-set_env_var "$WA_ENV" INTERNAL_TOKEN "$CLIENT_TOKEN"
-set_env_var "$WA_ENV" CRM_INTERNAL_TOKEN "$CLIENT_TOKEN"
-set_env_var "$WA_ENV" PII_VAULT_SERVICE_TOKEN "$PII_TOKEN"
-
-echo "Synced service tokens from $SECRET_ID into:"
-echo "  - crm-service: CLIENT_SERVICE_TOKEN, MT_BRIDGE_SERVICE_TOKEN, PII_VAULT_SERVICE_TOKEN, VOIP_GATEWAY_TOKEN, WHATSAPP_GATEWAY_TOKEN, INTERNAL_SERVICE_TOKEN"
-echo "  - client-service: INTERNAL_SERVICE_TOKEN, MT_BRIDGE_SERVICE_TOKEN"
-echo "  - pii-vault-service: SERVICE_TOKEN"
-echo "  - voip-gateway-service: INTERNAL_TOKEN, CRM_INTERNAL_TOKEN"
-echo "  - whatsapp-gateway-service: INTERNAL_TOKEN, CRM_INTERNAL_TOKEN, PII_VAULT_SERVICE_TOKEN"
-echo "Recreate affected containers:"
-echo "  docker compose -f deploy/staging/docker-compose.app.yml up -d --force-recreate crm-api client pii-vault voip-gateway whatsapp-gateway"
+echo "Synced service tokens from $SECRET_ID"
+if [[ "$DRY_RUN" == true ]]; then
+  echo "[dry-run] no files written"
+  exit 0
+fi
+if [[ "$ROTATE_CRM_INTERNAL" == true ]]; then
+  echo "Recreate crm + gateways together (avoid crm_internal 401 window):"
+  echo "  docker compose -f deploy/staging/docker-compose.app.yml up -d --no-deps --force-recreate crm-api voip-gateway whatsapp-gateway"
+else
+  echo "After mt_bridge token changes, recreate crm-api and client:"
+  echo "  docker compose -f deploy/staging/docker-compose.app.yml up -d --no-deps --force-recreate crm-api client"
+fi

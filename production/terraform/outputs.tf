@@ -143,6 +143,10 @@ output "secret_service_tokens_arn" {
   value = aws_secretsmanager_secret.service_tokens.arn
 }
 
+output "secret_mt_bridge_webhook_arn" {
+  value = aws_secretsmanager_secret.mt_bridge_webhook.arn
+}
+
 output "secret_mt5_manager_arn" {
   value = aws_secretsmanager_secret.mt5_manager.arn
 }

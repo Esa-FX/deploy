@@ -39,13 +39,16 @@ locals {
 }
 
 resource "aws_instance" "core" {
-  ami                    = data.aws_ami.amazon_linux_2023.id
-  instance_type          = var.linux_instance_type
-  subnet_id              = values(aws_subnet.private)[0].id
-  vpc_security_group_ids = [aws_security_group.app.id]
-  iam_instance_profile   = aws_iam_instance_profile.core.name
-  key_name               = var.ssh_key_name
-  user_data              = local.linux_user_data
+  ami           = data.aws_ami.amazon_linux_2023.id
+  instance_type = var.linux_instance_type
+  subnet_id     = values(aws_subnet.private)[0].id
+  vpc_security_group_ids = [
+    aws_security_group.app.id,
+    aws_security_group.mt_bridge_callers.id,
+  ]
+  iam_instance_profile = aws_iam_instance_profile.core.name
+  key_name             = var.ssh_key_name
+  user_data            = local.linux_user_data
 
   root_block_device {
     volume_size = 30
@@ -64,13 +67,16 @@ resource "aws_instance" "core" {
 }
 
 resource "aws_instance" "crm" {
-  ami                    = data.aws_ami.amazon_linux_2023.id
-  instance_type          = var.linux_instance_type
-  subnet_id              = values(aws_subnet.private)[0].id
-  vpc_security_group_ids = [aws_security_group.app.id]
-  iam_instance_profile   = aws_iam_instance_profile.crm.name
-  key_name               = var.ssh_key_name
-  user_data              = local.linux_user_data
+  ami           = data.aws_ami.amazon_linux_2023.id
+  instance_type = var.linux_instance_type
+  subnet_id     = values(aws_subnet.private)[0].id
+  vpc_security_group_ids = [
+    aws_security_group.app.id,
+    aws_security_group.mt_bridge_callers.id,
+  ]
+  iam_instance_profile = aws_iam_instance_profile.crm.name
+  key_name             = var.ssh_key_name
+  user_data            = local.linux_user_data
 
   root_block_device {
     volume_size = 40

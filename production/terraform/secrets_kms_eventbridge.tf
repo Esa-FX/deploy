@@ -124,12 +124,28 @@ resource "aws_secretsmanager_secret_version" "service_tokens" {
   secret_id = aws_secretsmanager_secret.service_tokens.id
   secret_string = jsonencode({
     client                  = random_password.service_tokens.result
+    crm_internal            = random_password.crm_internal.result
     mt_bridge               = random_password.service_tokens.result
+    mt_bridge_crm           = random_password.mt_bridge_crm.result
+    mt_bridge_client        = random_password.mt_bridge_client.result
+    mt_bridge_admin         = random_password.mt_bridge_admin.result
     pii_vault               = random_password.service_tokens.result
     CLIENT_SERVICE_TOKEN    = random_password.service_tokens.result
     INTERNAL_SERVICE_TOKEN  = random_password.service_tokens.result
     MT_BRIDGE_SERVICE_TOKEN = random_password.service_tokens.result
     PII_VAULT_SERVICE_TOKEN = random_password.service_tokens.result
+  })
+}
+
+resource "aws_secretsmanager_secret" "mt_bridge_webhook" {
+  name = "${var.project}/${var.environment}/mt-bridge-webhook"
+  tags = local.common_tags
+}
+
+resource "aws_secretsmanager_secret_version" "mt_bridge_webhook" {
+  secret_id = aws_secretsmanager_secret.mt_bridge_webhook.id
+  secret_string = jsonencode({
+    dealer_webhook = random_password.dealer_webhook.result
   })
 }
 
