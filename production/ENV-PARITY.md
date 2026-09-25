@@ -33,12 +33,12 @@ These must always match within an environment:
 | CRM (`crm-service`) | VoIP (`voip-gateway-service`) | Source |
 |-------------------|-------------------------------|--------|
 | `VOIP_GATEWAY_TOKEN` | `INTERNAL_TOKEN` | `service-tokens` secret → `client` key |
-| `INTERNAL_SERVICE_TOKEN` | `CRM_INTERNAL_TOKEN` | `service-tokens` → `crm_internal` |
-| `MT_BRIDGE_SERVICE_TOKEN` | (client uses own token) | `mt_bridge_crm` / `mt_bridge_client` |
+| `INTERNAL_SERVICE_TOKEN` (crm-api) | `CRM_INTERNAL_TOKEN` (voip-gateway) | `service-tokens` → `crm_internal` (only with `--rotate-crm-internal`) |
+| `MT_BRIDGE_SERVICE_TOKEN` (crm) | `MT_BRIDGE_SERVICE_TOKEN` (client) | `mt_bridge_crm` / `mt_bridge_client` |
 
-Client-service: `CRM_INTERNAL_TOKEN` = `crm_internal` (calls into crm).
+client-service does not call crm; `INTERNAL_SERVICE_TOKEN` on client stays paired with crm `CLIENT_SERVICE_TOKEN` (`client` key).
 
-Sync scripts set both automatically:
+Sync scripts set tokens automatically:
 
 - Staging: `deploy/staging/sync-service-tokens-env.sh`
 - Production: `deploy/production/sync-service-tokens-env.sh`

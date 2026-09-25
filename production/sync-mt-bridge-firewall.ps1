@@ -4,4 +4,10 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-& "$PSScriptRoot\..\staging\sync-mt-bridge-firewall.ps1" -VpcCidr $VpcCidr @PSBoundParameters
+$params = @{
+    VpcCidr = $VpcCidr
+}
+if ($WhatIf) {
+    $params['WhatIf'] = $true
+}
+& "$PSScriptRoot\..\staging\sync-mt-bridge-firewall.ps1" @params

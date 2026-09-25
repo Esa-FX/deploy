@@ -10,9 +10,12 @@ if [[ "$ENVIRONMENT" == "production" ]]; then
   exit 1
 fi
 
-APP_INSTANCE_ID="${APP_INSTANCE_ID:-i-06e3745274ed0fac4}"
-MT_INSTANCE_ID="${MT_INSTANCE_ID:-i-082a9df5e269d8ae5}"
 CRM_ENV_FILE="${CRM_ENV_FILE:-/opt/esafx/crm-service/.env.staging}"
+# Override with APP_INSTANCE_ID / MT_INSTANCE_ID, or set tag filters (see runbook).
+APP_INSTANCE_TAG_KEY="${APP_INSTANCE_TAG_KEY:-Tier}"
+APP_INSTANCE_TAG_VALUE="${APP_INSTANCE_TAG_VALUE:-app-staging}"
+MT_INSTANCE_TAG_KEY="${MT_INSTANCE_TAG_KEY:-Tier}"
+MT_INSTANCE_TAG_VALUE="${MT_INSTANCE_TAG_VALUE:-mt-bridge}"
 
 PREFIX="esafx-${ENVIRONMENT}"
 CALLERS_SG_NAME="${PREFIX}-mt-bridge-callers-sg"
@@ -23,8 +26,23 @@ ALB_SG_NAME="${PREFIX}-alb-sg"
 DRY_RUN=false
 CONFIRM=false
 
+lookup_instance_id() {
+  local tag_key="$1"
+  local tag_value="$2"
+  local id
+  id="$(aws ec2 describe-instances --region "$REGION" \
+    --filters "Name=tag:${tag_key},Values=${tag_value}" "Name=instance-state-name,Values=running" \
+    --query 'Reservations[0].Instances[0].InstanceId' --output text)"
+  if [[ -z "$id" || "$id" == "None" ]]; then
+    echo "No running instance for tag ${tag_key}=${tag_value} (set APP_INSTANCE_ID / MT_INSTANCE_ID)" >&2
+    return 1
+  fi
+  echo "$id"
+}
+
 usage() {
   echo "Usage: $0 [--dry-run] [--confirm]" >&2
+  echo "  Instances: APP_INSTANCE_ID, MT_INSTANCE_ID, or tag filters APP_INSTANCE_TAG_* / MT_INSTANCE_TAG_*" >&2
   exit "${1:-0}"
 }
 
@@ -107,6 +125,13 @@ ensure_sg() {
   aws ec2 create-security-group --region "$REGION" --group-name "$name" \
     --description "$desc" --vpc-id "$vpc" --query GroupId --output text
 }
+
+if [[ -z "${APP_INSTANCE_ID:-}" ]]; then
+  APP_INSTANCE_ID="$(lookup_instance_id "$APP_INSTANCE_TAG_KEY" "$APP_INSTANCE_TAG_VALUE")"
+fi
+if [[ -z "${MT_INSTANCE_ID:-}" ]]; then
+  MT_INSTANCE_ID="$(lookup_instance_id "$MT_INSTANCE_TAG_KEY" "$MT_INSTANCE_TAG_VALUE")"
+fi
 
 echo "Staging MT bridge SG plan"
 echo "  App instance: $APP_INSTANCE_ID"

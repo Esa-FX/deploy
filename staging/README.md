@@ -62,7 +62,7 @@ docker compose -f deploy/staging/docker-compose.app.yml --profile migrate run --
 MT_BRIDGE_SERVICE_URL=http://<mt_ec2_private_ip>:8003
 ```
 
-`MT_BRIDGE_SERVICE_TOKEN` is **per caller** (`mt_bridge_crm` on crm-api, `mt_bridge_client` on client-service). `INTERNAL_SERVICE_TOKEN` on crm-api uses `crm_internal` (must match `CRM_INTERNAL_TOKEN` on voip/client/whatsapp).
+`MT_BRIDGE_SERVICE_TOKEN` is **per caller** (`mt_bridge_crm` on crm-api, `mt_bridge_client` on client-service). `crm_internal` → crm `INTERNAL_SERVICE_TOKEN` and voip/whatsapp CRM token vars only when you pass `--rotate-crm-internal` to the sync script.
 
 **Inter-service tokens (`esafx/staging/service-tokens`):** `crm-api` sends `CLIENT_SERVICE_TOKEN` as `X-Internal-Token` to client-service. client-service expects the same value in `INTERNAL_SERVICE_TOKEN`. If they drift, trading-meta returns **401** and CRM features that call client-service break.
 
