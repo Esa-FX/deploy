@@ -1,0 +1,24 @@
+{
+  "DocumentName": "AWS-RunShellScript",
+  "InstanceIds": ["i-06c9b4647a1fc8ee8"],
+  "TimeoutSeconds": 1800,
+  "Parameters": {
+    "commands": [
+      "set -euo pipefail",
+      "cd /opt/esafx",
+      "REGION=ap-southeast-3",
+      "GITHUB_TOKEN=$(aws secretsmanager get-secret-value --secret-id esafx/production/github-clone --region $REGION --query SecretString --output text)",
+      "git_pull() { local name=$1 branch=$2; local url=\"https://x-access-token:${GITHUB_TOKEN}@github.com/Esa-FX/${name}.git\"; if [ ! -d \"$name/.git\" ]; then git clone --branch \"$branch\" --single-branch \"$url\" \"$name\"; git -C \"$name\" remote set-url origin \"https://github.com/Esa-FX/${name}.git\"; git -C \"$name\" log -1 --oneline; return; fi; git -C \"$name\" remote set-url origin \"$url\"; git -C \"$name\" fetch origin \"$branch\"; git -C \"$name\" checkout \"$branch\"; git -C \"$name\" reset --hard \"origin/$branch\"; git -C \"$name\" remote set-url origin \"https://github.com/Esa-FX/${name}.git\"; git -C \"$name\" log -1 --oneline; }",
+      "git_pull deploy main",
+      "git_pull backoffice-service main",
+      "unset GITHUB_TOKEN",
+      "cp -n backoffice-service/.env.production.example backoffice-service/.env.production",
+      "ENV_FILE=/opt/esafx/backoffice-service/.env.production bash deploy/staging/sync-backoffice-trading-db-env.sh",
+      "python3 - <<'PY'\nfrom pathlib import Path\nimport json, subprocess\np = Path('/opt/esafx/backoffice-service/.env.production')\ntext = p.read_text(encoding='utf-8')\nraw = subprocess.check_output(['aws','secretsmanager','get-secret-value','--secret-id','esafx/production/backoffice-internal-token','--region','ap-southeast-3','--query','SecretString','--output','text'], text=True).strip()\ntoken = json.loads(raw)['token'] if raw.startswith('{') else raw\nrepl = {\n  'ENVIRONMENT': 'production',\n  'SMTP_ACCSUM_SECRET_ID': 'esafx/production/smtp-accsum',\n  'CLIENT_SERVICE_URL': 'http://client:8000',\n  'CORS_ORIGINS': 'https://backoffice.esandardev.com',\n  'INTERNAL_SERVICE_TOKEN': token,\n}\nlines = []\nseen = set()\nfor line in text.splitlines():\n    if '=' in line and not line.strip().startswith('#'):\n        k = line.split('=', 1)[0]\n        if k in repl:\n            lines.append(f'{k}={repl[k]}')\n            seen.add(k)\n            continue\n    lines.append(line)\nfor k, v in repl.items():\n    if k not in seen:\n        lines.append(f'{k}={v}')\np.write_text('\\n'.join(lines) + '\\n', encoding='utf-8')\nprint('env_ready', 'token_len=' + str(len(token)))\nPY",
+      "docker compose -f deploy/production/docker-compose.crm.yml build backoffice",
+      "docker compose -f deploy/production/docker-compose.crm.yml up -d --no-deps --force-recreate backoffice",
+      "sleep 15",
+      "curl -sf http://127.0.0.1:8008/health && echo prod-backoffice-ok"
+    ]
+  }
+}
