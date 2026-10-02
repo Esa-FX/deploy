@@ -1,0 +1,31 @@
+{
+  "DocumentName": "AWS-RunPowerShellScript",
+  "InstanceIds": ["i-082a9df5e269d8ae5"],
+  "TimeoutSeconds": 1800,
+  "Parameters": {
+    "commands": [
+      "$ErrorActionPreference = 'Stop'",
+      "$env:Path = [System.Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path', 'User')",
+      "Set-Location C:\\esafx\\mt-bridge-service",
+      "$token = (aws secretsmanager get-secret-value --secret-id esafx/staging/github-clone --region ap-southeast-3 --query SecretString --output text)",
+      "git remote set-url origin \"https://x-access-token:${token}@github.com/Esa-FX/mt-bridge-service.git\"",
+      "git fetch origin main",
+      "git checkout main",
+      "git reset --hard origin/main",
+      "git log -1 --oneline",
+      "$py = Join-Path (Get-Location) '.venv\\Scripts\\python.exe'",
+      "$alembic = Join-Path (Get-Location) '.venv\\Scripts\\alembic.exe'",
+      "Copy-Item .env.staging .env -Force",
+      "$env:PYTHONPATH = (Get-Location).Path",
+      "& $alembic upgrade head",
+      "& $alembic current",
+      "Get-CimInstance Win32_Process -Filter \"Name='python.exe'\" | Where-Object { $_.CommandLine -like '*uvicorn*app.main*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }",
+      "Start-Sleep -Seconds 3",
+      "$env:PYTHONPATH = (Get-Location).Path",
+      "Start-Process -FilePath $py -ArgumentList '-m','uvicorn','app.main:app','--host','0.0.0.0','--port','8003' -WorkingDirectory (Get-Location) -WindowStyle Hidden",
+      "Start-Sleep -Seconds 15",
+      "(Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:8003/health').StatusCode",
+      "git remote set-url origin https://github.com/Esa-FX/mt-bridge-service.git"
+    ]
+  }
+}
