@@ -162,7 +162,7 @@ resource "aws_iam_role_policy" "ftd_uploads_crm" {
     Statement = [
       {
         Effect   = "Allow"
-        Action   = ["s3:PutObject", "s3:GetObject", "s3:AbortMultipartUpload"]
+        Action   = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject", "s3:AbortMultipartUpload"]
         Resource = "${aws_s3_bucket.ftd_uploads.arn}/${local.ftd_uploads_prefix}/*"
       },
       {

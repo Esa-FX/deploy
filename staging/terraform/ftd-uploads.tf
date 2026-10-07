@@ -62,6 +62,7 @@ resource "aws_iam_role_policy" "ftd_uploads_app_ec2" {
         Effect = "Allow"
         Action = [
           "s3:GetObject",
+          "s3:DeleteObject",
         ]
         Resource = "${aws_s3_bucket.ftd_uploads.arn}/${local.ftd_uploads_prefix}/*"
       },
