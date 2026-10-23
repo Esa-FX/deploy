@@ -83,6 +83,10 @@ output "cognito_app_client_id" {
   value = aws_cognito_user_pool_client.crm_spa.id
 }
 
+output "cognito_wiki_alb_client_id" {
+  value = aws_cognito_user_pool_client.wiki_alb.id
+}
+
 output "cognito_domain" {
   value = "${aws_cognito_user_pool_domain.staff.domain}.auth.${var.aws_region}.amazoncognito.com"
 }
