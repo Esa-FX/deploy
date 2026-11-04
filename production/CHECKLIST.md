@@ -150,6 +150,22 @@ Template: [`crm/.env.production.example`](../../crm/.env.production.example)
 
 ## 7. Rollback
 
+### crm-api — one command
+
+Images are kept per commit as `esafx-crm:<short-sha>`, and
+`/opt/esafx/deploy/current-images.txt` on the CRM EC2 records the tags that are
+actually running (current and previous). To roll crm-api back:
+
+```bash
+cd /opt/esafx/deploy/production && \
+  CRM_IMAGE=esafx-crm:<short-sha-of-previous-good> \
+  docker compose -f docker-compose.crm.yml up -d --no-deps crm-api && \
+  curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8001/health
+```
+
+Nothing is rebuilt and no git checkout is touched, so this works even if `main`
+has moved on. `/health` must return `200` before you stop.
+
 - Revert `git pull` on EC2 to previous commit and re-run tier deploy script
 - Redeploy previous frontend build from S3 versioning (if enabled) or rebuild from prior git tag
 
