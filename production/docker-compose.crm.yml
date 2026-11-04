@@ -17,10 +17,14 @@ services:
 
   crm-api:
     logging:
-      driver: json-file
+      driver: awslogs
       options:
-        max-size: "10m"
-        max-file: "3"
+        awslogs-group: /esafx/production/crm-api
+        awslogs-region: ap-southeast-3
+        awslogs-stream-prefix: crm-api
+        awslogs-create-group: "true"
+        mode: non-blocking
+        max-buffer-size: 4m
     image: ${CRM_IMAGE:-esafx-crm:latest}
     build:
       context: ../../crm-service
