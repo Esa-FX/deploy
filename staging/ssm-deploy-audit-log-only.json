@@ -1,0 +1,25 @@
+{
+  "DocumentName": "AWS-RunShellScript",
+  "InstanceIds": ["i-06e3745274ed0fac4"],
+  "TimeoutSeconds": 900,
+  "Parameters": {
+    "commands": [
+      "set -euxo pipefail",
+      "cd /opt/esafx",
+      "REGION=ap-southeast-3",
+      "GITHUB_TOKEN=$(aws secretsmanager get-secret-value --secret-id esafx/staging/github-clone --region $REGION --query SecretString --output text)",
+      "git -C audit-log-service remote set-url origin \"https://x-access-token:${GITHUB_TOKEN}@github.com/Esa-FX/audit-log-service.git\"",
+      "git -C audit-log-service fetch origin staging",
+      "git -C audit-log-service checkout staging",
+      "git -C audit-log-service reset --hard origin/staging",
+      "git -C audit-log-service remote set-url origin \"https://github.com/Esa-FX/audit-log-service.git\"",
+      "git -C audit-log-service log -1 --oneline",
+      "docker compose -f deploy/staging/docker-compose.app.yml build audit-log",
+      "docker compose -f deploy/staging/docker-compose.app.yml --profile migrate run --rm audit-migrate",
+      "docker compose -f deploy/staging/docker-compose.app.yml up -d --force-recreate audit-log",
+      "sleep 10",
+      "curl -sf http://127.0.0.1:8005/health && echo staging-audit-log-ok",
+      "unset GITHUB_TOKEN"
+    ]
+  }
+}
