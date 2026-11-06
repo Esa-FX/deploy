@@ -1,0 +1,23 @@
+{
+  "DocumentName": "AWS-RunShellScript",
+  "InstanceIds": ["i-0230b88ebf9b7adea"],
+  "TimeoutSeconds": 1800,
+  "Parameters": {
+    "commands": [
+      "set -euxo pipefail",
+      "cd /opt/esafx",
+      "REGION=ap-southeast-3",
+      "set +x; GITHUB_TOKEN=$(aws secretsmanager get-secret-value --secret-id esafx/production/github-clone --region $REGION --query SecretString --output text); set -x",
+      "git_pull() { local name=$1 branch=$2; set +x; local url=\"https://x-access-token:${GITHUB_TOKEN}@github.com/Esa-FX/${name}.git\"; git -C \"$name\" remote set-url origin \"$url\"; set -x; git -C \"$name\" fetch origin \"$branch\"; git -C \"$name\" checkout \"$branch\"; git -C \"$name\" reset --hard \"origin/$branch\"; git -C \"$name\" remote set-url origin \"https://github.com/Esa-FX/${name}.git\"; git -C \"$name\" log -1 --oneline; }",
+      "git_pull deploy main",
+      "git_pull audit-log-service main",
+      "docker compose -f deploy/production/docker-compose.core.yml build audit-log",
+      "docker compose -f deploy/production/docker-compose.core.yml --profile migrate run --rm audit-migrate",
+      "docker compose -f deploy/production/docker-compose.core.yml up -d --force-recreate audit-log",
+      "sleep 15",
+      "curl -sf http://127.0.0.1:8005/health && echo prod-audit-log-ok",
+      "git -C audit-log-service log -1 --oneline",
+      "unset GITHUB_TOKEN"
+    ]
+  }
+}
