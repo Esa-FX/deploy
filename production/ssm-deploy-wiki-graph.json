@@ -2,7 +2,7 @@
   "DocumentName": "AWS-RunShellScript",
   "TimeoutSeconds": 600,
   "Comment": "Serve Esa-FX/wiki hover graph on docmost EC2 :8080",
-  "InstanceIds": ["REPLACE_WITH_DOCMOST_INSTANCE_ID"],
+  "InstanceIds": ["i-085bce29a2f2fbca3"],
   "Parameters": {
     "commands": [
       "set -euo pipefail",
