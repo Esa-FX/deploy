@@ -1,3 +1,11 @@
+# Backup-failure alerting is NOT managed here yet. The RDS event subscription
+# `esafx-prod-rds-events` (RDS -> aws_sns_topic.ops, categories backup/failure/
+# maintenance) was created by CLI on 2026-11-16 and is absent from state. If you add an
+# aws_db_event_subscription resource below, `terraform import` it first, otherwise the
+# plan will try to create a duplicate and fail on SubscriptionAlreadyExists:
+#   terraform import aws_db_event_subscription.rds_events esafx-prod-rds-events
+# Pre-change snapshots: ops/rds/rds-prechange-snapshot.ps1.
+
 resource "random_password" "core_db" {
   length  = 32
   special = false
