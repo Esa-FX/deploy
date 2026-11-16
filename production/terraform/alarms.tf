@@ -20,6 +20,16 @@ resource "aws_sns_topic_policy" "ops" {
           StringEquals = { "aws:SourceAccount" = local.account_id }
         }
       },
+      {
+        Sid       = "AllowRdsEvents"
+        Effect    = "Allow"
+        Principal = { Service = "rds.amazonaws.com" }
+        Action    = "sns:Publish"
+        Resource  = aws_sns_topic.ops.arn
+        Condition = {
+          StringEquals = { "aws:SourceAccount" = local.account_id }
+        }
+      },
     ]
   })
 }
